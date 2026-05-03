@@ -3,6 +3,12 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+// Models (import to register with mongoose)
+require('./models/User');
+require('./models/Donor');
+require('./models/BloodRequest');
+require('./models/DonationLog');
+
 const app = express();
 
 // Middleware
