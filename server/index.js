@@ -3,30 +3,28 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-// Models (import to register with mongoose)
-require('./models/User');
-require('./models/Donor');
-require('./models/BloodRequest');
-require('./models/DonationLog');
-
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(cors());
+//  Middleware 
+app.use(express.json());   // Parse JSON request bodies
+app.use(cors());           // Allow requests from frontend (localhost:3000)
 
-// MongoDB Connection
+//  Database Connection 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.log('❌ MongoDB error:', err));
 
-// Test route
+//  Routes 
+//  All auth routes will be prefixed with /api/auth
+app.use('/api/auth', require('./routes/auth'));
+
+//  Test Route 
 app.get('/', (req, res) => {
   res.json({ message: '🩸 LifeLink API is running' });
 });
 
-// Start server
+//  Start Server 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });
