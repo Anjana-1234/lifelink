@@ -1,21 +1,34 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import Login     from './pages/Login';
-import Register  from './pages/Register';
-import Dashboard from './pages/Dashboard';
 
-// ── Route Guards ─────────────────────────────────────────────
+// ── Pages ─────────────────────────────────────────────────────
+import Login        from './pages/Login';
+import Register     from './pages/Register';
+import Dashboard    from './pages/Dashboard';
+import Browse       from './pages/Browse';
+import RequestBlood from './pages/RequestBlood';
+import MyActivity   from './pages/MyActivity';
+import RequestDetail from './pages/RequestDetail';
 
-// If already logged in, redirect away from login/register to dashboard
+// ── Layout ────────────────────────────────────────────────────
+import Layout from './components/Layout';
+
+// ── Route Guards ──────────────────────────────────────────────
+
+// PublicRoute: if already logged in, redirect to dashboard
+// Prevents logged-in users from seeing login/register pages
 const PublicRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? <Navigate to="/dashboard" /> : children;
 };
 
-// If NOT logged in, redirect to login page
+// PrivateRoute: if NOT logged in, redirect to login
+// Protects pages that require authentication
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
-  return token ? children : <Navigate to="/login" />;
+  return token
+    ? <Layout>{children}</Layout>  // wrap with navbar layout
+    : <Navigate to="/login" />;
 };
 
 function App() {
@@ -23,8 +36,7 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* ── Public Routes ── */}
-        {/* Redirect to dashboard if already logged in */}
+        {/* ── Public Routes (no navbar) ── */}
         <Route path="/login" element={
           <PublicRoute><Login /></PublicRoute>
         } />
@@ -32,14 +44,24 @@ function App() {
           <PublicRoute><Register /></PublicRoute>
         } />
 
-        {/* ── Protected Routes ── */}
-        {/* Redirect to login if not logged in */}
+        {/* ── Private Routes (with navbar via Layout) ── */}
         <Route path="/dashboard" element={
           <PrivateRoute><Dashboard /></PrivateRoute>
         } />
+        <Route path="/browse" element={
+          <PrivateRoute><Browse /></PrivateRoute>
+        } />
+        <Route path="/request-blood" element={
+          <PrivateRoute><RequestBlood /></PrivateRoute>
+        } />
+        <Route path="/my-activity" element={
+          <PrivateRoute><MyActivity /></PrivateRoute>
+        } />
+        <Route path="/request/:id" element={
+          <PrivateRoute><RequestDetail /></PrivateRoute>
+        } />
 
         {/* ── Default ── */}
-        {/* Any unknown URL → go to dashboard (which redirects to login if needed) */}
         <Route path="*" element={<Navigate to="/dashboard" />} />
 
       </Routes>
