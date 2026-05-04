@@ -1,86 +1,88 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Donor = require('../models/Donor');
+const jwt    = require('jsonwebtoken');
+const User   = require('../models/User');
+const Donor  = require('../models/Donor');
 const { checkEligibility } = require('../utils/eligibility');
 
 // @route   POST /api/auth/register
-// @desc    Register a new user (donor or requester)
+// @desc    Register new user + save health profile
 // @access  Public
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, role, phone, donorDetails } = req.body;
+    const { name, email, password, phone, donorDetails } = req.body;
 
-    // Check if user already exists with this email
+    // Check if email is already taken
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Hash the password before saving
-    // Number 10 is the "salt rounds" — higher = more secure but slower
+    // Hash the password — never store plain text passwords!
+    // 10 = salt rounds (how complex the hash is)
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create and save the new user
+    // Create the user in DB
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role,
       phone
     });
 
-    // If the user is registering as a donor, save their health profile
-    if (role === 'donor' && donorDetails) {
+    // Save donor health profile if provided
+    // We collect this at registration so users are ready
+    // to donate immediately without extra setup steps
+    if (donorDetails) {
 
-      // Check eligibility before registering as donor
+      // Check if this person is currently eligible to donate
       const eligibilityResult = checkEligibility(
         donorDetails.healthFlags || {},
-        donorDetails.age,
-        donorDetails.weight,
-        null // No previous donation date on first registration
+        Number(donorDetails.age),    // convert string to number
+        Number(donorDetails.weight), // convert string to number
+        null                         // no previous donation date yet
       );
 
       await Donor.create({
-        userId: user._id,
-        bloodType: donorDetails.bloodType,
-        location: donorDetails.location,
-        age: donorDetails.age,
-        weight: donorDetails.weight,
-        isEligible: eligibilityResult.eligible,
-        healthFlags: donorDetails.healthFlags || {}
+        userId:      user._id,
+        bloodType:   donorDetails.bloodType,
+        location:    donorDetails.location,
+        age:         Number(donorDetails.age),
+        weight:      Number(donorDetails.weight),
+        healthFlags: donorDetails.healthFlags || {},
+        isEligible:  eligibilityResult.eligible
       });
     }
 
     // Generate JWT token
-    // This token is sent to frontend and stored — used for all future requests
+    // Token contains user id — used to identify user in future requests
     const token = jwt.sign(
-      { id: user._id, role: user.role }, // Payload (data inside token)
-      process.env.JWT_SECRET,             // Secret key
-      { expiresIn: process.env.JWT_EXPIRE } // Token expires in 7 days
+      { id: user._id },              //  NO role — we removed role from users
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE }
     );
 
-    // Send response with token and basic user info
+    // Send back token + safe user info (never send password!)
     res.status(201).json({
       success: true,
       token,
       user: {
-        id: user._id,
-        name: user.name,
+        id:    user._id,
+        name:  user.name,
         email: user.email,
-        role: user.role
+        phone: user.phone
+        //  NO role field — it doesn't exist anymore
       }
     });
 
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Register error:', error.message);
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
 
 // @route   POST /api/auth/login
-// @desc    Login user and return token
+// @desc    Login user and return JWT token
 // @access  Public
 
 const login = async (req, res) => {
@@ -90,19 +92,21 @@ const login = async (req, res) => {
     // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
+      // Use same message for both cases — don't reveal which is wrong
+      // (security best practice — don't tell attackers which emails exist)
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    // Compare the entered password with the hashed password in DB
-    // bcrypt.compare() handles the decryption automatically
+    // Compare entered password with the stored hashed password
+    // bcrypt handles this automatically — never decrypt, always compare
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    // Generate new token on login
+    // Generate a fresh token on every login
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id },              //  NO role — removed from user model
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -111,29 +115,32 @@ const login = async (req, res) => {
       success: true,
       token,
       user: {
-        id: user._id,
-        name: user.name,
+        id:    user._id,
+        name:  user.name,
         email: user.email,
-        role: user.role
+        phone: user.phone
+        //  NO role field
       }
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.message);
     res.status(500).json({ message: 'Server error during login' });
   }
 };
 
 // @route   GET /api/auth/me
-// @desc    Get current logged in user
-// @access  Private (needs token)
+// @desc    Get currently logged in user's data
+// @access  Private (requires valid JWT token)
 
 const getMe = async (req, res) => {
   try {
-    // req.user was set by the protect middleware
+    // req.user.id was attached by the protect middleware
+    // .select('-password') means return everything EXCEPT password
     const user = await User.findById(req.user.id).select('-password');
     res.json({ success: true, user });
   } catch (error) {
+    console.error('GetMe error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };
