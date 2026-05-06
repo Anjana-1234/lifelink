@@ -1,36 +1,32 @@
 const mongoose = require('mongoose');
 
+// ── User Schema ───────────────────────────────────────────────
+// Stores basic account information only
+// No role field — users can be both donors and requesters
 const UserSchema = new mongoose.Schema({
   name: {
-    type: String,
+    type:     String,
     required: [true, 'Name is required'],
-    trim: true
+    trim:     true
   },
   email: {
-    type: String,
+    type:     String,
     required: [true, 'Email is required'],
-    unique: true,
+    unique:   true,
     lowercase: true,
-    trim: true
+    trim:     true
   },
   password: {
-    type: String,
-    required: [true, 'Password is required'],
+    type:      String,
+    required:  [true, 'Password is required'],
     minlength: 6
   },
-  role: {
-    type: String,
-    enum: ['donor', 'requester'],
-    required: true
-  },
   phone: {
-    type: String,
+    type:     String,
     required: [true, 'Phone number is required']
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+  // No role field — removed intentionally
+  // Users choose to donate or request from the dashboard
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
