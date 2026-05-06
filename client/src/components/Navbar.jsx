@@ -7,7 +7,7 @@ import logo from '../assets/logo.png';
 // Defined here so adding a new page only needs one line change
 const NAV_LINKS = [
   { path: '/dashboard',     label: 'Home'           },
-  { path: '/browse',        label: 'Browse Requests' },
+  { path: '/browse',        label: 'Browse Requests'},
   { path: '/request-blood', label: 'Request Blood'  },
   { path: '/my-activity',   label: 'My Activity'    },
 ];
@@ -33,14 +33,14 @@ const Navbar = () => {
       {/* sticky top-0 keeps it visible when user scrolls */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-24">
 
           {/* ── Left Side: Logo ─────────────────────────── */}
           <Link to="/dashboard" className="flex items-center gap-2 flex-shrink-0">
             <img
               src={logo}
               alt="LifeLink Logo"
-              className="h-10 w-auto" // h-10 = 40px height, width auto keeps ratio
+              className="h-12 w-auto" // h-12 = 48px height, width auto keeps ratio
             />
           </Link>
 
@@ -51,7 +51,7 @@ const Navbar = () => {
               <Link
                 key={path}
                 to={path}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                className={`px-4 py-2 rounded-lg text-lg font-large transition-colors
                   ${isActive(path)
                     ? 'text-white'           // active page — white text
                     : 'text-gray-300 hover:text-white hover:bg-white/10'
