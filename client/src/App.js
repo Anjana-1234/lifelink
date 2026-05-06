@@ -9,6 +9,7 @@ import Browse       from './pages/Browse';
 import RequestBlood from './pages/RequestBlood';
 import MyActivity   from './pages/MyActivity';
 import RequestDetail from './pages/RequestDetail';
+import Profile from './pages/Profile';
 
 // ── Layout ────────────────────────────────────────────────────
 import Layout from './components/Layout';
@@ -59,6 +60,9 @@ function App() {
         } />
         <Route path="/request/:id" element={
           <PrivateRoute><RequestDetail /></PrivateRoute>
+        } />
+        <Route path="/profile" element={
+          <PrivateRoute><Profile /></PrivateRoute>
         } />
 
         {/* ── Default ── */}
