@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
 // ── Constants ─────────────────────────────────────────────────
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -84,28 +85,26 @@ const RequestBlood = () => {
 
   // ── Submit ───────────────────────────────────────────────
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      // Send request to backend with JWT token in header
-      // The token identifies who is making the request
-      const res = await axios.post(
-        'http://localhost:5000/api/requests',
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Store success response to show confirmation UI
-      setSuccess(res.data);
-
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post request');
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  setError('');
+  setLoading(true);
+  try {
+    const res = await axios.post(
+      'http://localhost:5000/api/requests',
+      formData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    // Show success toast
+    toast.success(res.data.message);
+    setSuccess(res.data);
+  } catch (err) {
+    const msg = err.response?.data?.message || 'Failed to post request';
+    setError(msg);
+    toast.error(msg); // also show as toast
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── Success Screen ────────────────────────────────────────
   // Show this after successful submission instead of the form

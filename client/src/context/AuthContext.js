@@ -1,8 +1,7 @@
 import { createContext, useState, useContext } from 'react';
 import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
-// Context is like a global state — any component can access it
-// without passing props through every level
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -14,20 +13,24 @@ export const AuthProvider = ({ children }) => {
   // Base URL for all API calls
   const API = 'http://localhost:5000/api';
 
-  //  Register function 
+  // ── Register ──────────────────────────────────────────────
+  // Creates new account and saves token to localStorage
   const register = async (formData) => {
     const res = await axios.post(`${API}/auth/register`, formData);
 
-    // Save token and user to localStorage so they persist on refresh
     localStorage.setItem('token', res.data.token);
     localStorage.setItem('user', JSON.stringify(res.data.user));
 
     setToken(res.data.token);
     setUser(res.data.user);
+
+    // Show success toast on successful registration
+    toast.success('Account created! Welcome to LifeLink 🩸');
     return res.data;
   };
 
-  //  Login function 
+  // ── Login ─────────────────────────────────────────────────
+  // Logs in user and saves token to localStorage
   const login = async (formData) => {
     const res = await axios.post(`${API}/auth/login`, formData);
 
@@ -36,15 +39,20 @@ export const AuthProvider = ({ children }) => {
 
     setToken(res.data.token);
     setUser(res.data.user);
+
+    // Greet user by first name on login
+    toast.success(`Welcome back, ${res.data.user.name.split(' ')[0]}!`);
     return res.data;
   };
 
-  //  Logout function 
+  // ── Logout ────────────────────────────────────────────────
+  // Clears token and user from localStorage and state
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    toast('Logged out successfully');
   };
 
   return (

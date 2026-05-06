@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth }                from '../context/AuthContext';
-import axios                      from 'axios';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
-// ── Urgency config ────────────────────────────────────────────
+// ── Urgency badge config ──────────────────────────────────────
 const URGENCY_CONFIG = {
   Critical: { color: '#C0171D', bg: '#FEE2E2', label: '🔴 Critical' },
   Urgent:   { color: '#B45309', bg: '#FEF3C7', label: '🟡 Urgent'   },
   Normal:   { color: '#15803D', bg: '#DCFCE7', label: '🟢 Normal'   },
 };
 
+// ── Status badge config ───────────────────────────────────────
 const STATUS_CONFIG = {
   open:      { color: '#1D4ED8', bg: '#DBEAFE', label: '🔵 Open'      },
   fulfilled: { color: '#15803D', bg: '#DCFCE7', label: '✅ Fulfilled' },
@@ -17,9 +19,9 @@ const STATUS_CONFIG = {
 };
 
 const RequestDetail = () => {
-  const { id }       = useParams();  // get request ID from URL (/request/:id)
+  const { id }          = useParams();
   const { token, user } = useAuth();
-  const navigate     = useNavigate();
+  const navigate        = useNavigate();
 
   // ── State ─────────────────────────────────────────────────
   const [request,    setRequest]    = useState(null);
@@ -31,7 +33,7 @@ const RequestDetail = () => {
   // ── Fetch request on page load ────────────────────────────
   useEffect(() => {
     fetchRequest();
-  }, [id]); // re-fetch if ID changes
+  }, [id]);
 
   const fetchRequest = async () => {
     setLoading(true);
@@ -48,7 +50,8 @@ const RequestDetail = () => {
     }
   };
 
-  // ── Respond to request (accept/decline) ──────────────────
+  // ── Accept or Decline ─────────────────────────────────────
+  // action = 'accept' or 'decline'
   const handleRespond = async (action) => {
     setResponding(true);
     try {
@@ -57,16 +60,24 @@ const RequestDetail = () => {
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert(res.data.message);
-      fetchRequest(); // refresh to show updated respondents
+
+      // Different toast for accept vs decline
+      if (action === 'accept') {
+        toast.success('You accepted! The requester will contact you shortly. 🩸');
+      } else {
+        toast('You declined this request', { icon: '👋' });
+      }
+
+      fetchRequest(); // refresh to update respondents list
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to respond');
+      toast.error(err.response?.data?.message || 'Failed to respond');
     } finally {
       setResponding(false);
     }
   };
 
-  // ── Close request (mark fulfilled) ───────────────────────
+  // ── Mark as Fulfilled ─────────────────────────────────────
+  // Only the requester who posted can close their own request
   const handleClose = async () => {
     if (!window.confirm('Mark this request as fulfilled?')) return;
     setClosing(true);
@@ -76,9 +87,10 @@ const RequestDetail = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchRequest(); // refresh to show fulfilled status
+      toast.success('Request fulfilled! Thank you for saving a life! 🩸');
+      fetchRequest();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to close request');
+      toast.error(err.response?.data?.message || 'Failed to close request');
     } finally {
       setClosing(false);
     }
@@ -118,13 +130,13 @@ const RequestDetail = () => {
   const urgency = URGENCY_CONFIG[request.urgency] || URGENCY_CONFIG.Normal;
   const status  = STATUS_CONFIG[request.status]   || STATUS_CONFIG.open;
 
-  // Check if logged in user is the owner of this request
-  const isOwner = request.requesterId?._id === user?.id ||
-                  request.requesterId?._id?.toString() === user?.id;
+  // Fix: handle both string and object ID formats
+  const isOwner = request.requesterId?._id?.toString() === user?.id?.toString() ||
+                  request.requesterId?.toString()       === user?.id?.toString();
 
-  // Check if current user already responded
+  // Check if current user already responded to this request
   const myResponse = request.respondents?.find(
-    r => r.donorId?.userId === user?.id
+    r => r.donorId?.userId?.toString() === user?.id?.toString()
   );
 
   return (
@@ -132,7 +144,7 @@ const RequestDetail = () => {
 
       {/* ── Back Button ── */}
       <button
-        onClick={() => navigate(-1)} // go back to previous page
+        onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-sm text-gray-500
                    hover:text-gray-700 mb-6 transition"
       >
@@ -148,13 +160,10 @@ const RequestDetail = () => {
           style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}
         >
           <div className="flex items-center gap-4">
-
-            {/* Large blood type badge */}
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center
                             justify-center text-3xl font-black">
               {request.bloodType}
             </div>
-
             <div>
               <h1 className="text-2xl font-bold">{request.hospital}</h1>
               <p className="text-white/80 mt-1">
@@ -162,8 +171,6 @@ const RequestDetail = () => {
                   ? `${request.location.city}, `
                   : ''}{request.location?.district}
               </p>
-
-              {/* Status + Urgency badges */}
               <div className="flex gap-2 mt-2">
                 <span
                   className="text-xs px-2 py-1 rounded-full font-medium"
@@ -185,13 +192,13 @@ const RequestDetail = () => {
         {/* ── Body ── */}
         <div className="p-6 space-y-6">
 
-          {/* ── Request Info Grid ── */}
+          {/* ── Info Grid ── */}
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: 'Blood Type',    value: request.bloodType,    icon: '🩸' },
-              { label: 'Units Needed',  value: request.unitsNeeded,  icon: '💉' },
-              { label: 'Urgency',       value: request.urgency,      icon: '⚡' },
-              { label: 'Status',        value: request.status,       icon: '📋' },
+              { label: 'Blood Type',   value: request.bloodType,   icon: '🩸' },
+              { label: 'Units Needed', value: request.unitsNeeded, icon: '💉' },
+              { label: 'Urgency',      value: request.urgency,     icon: '⚡' },
+              { label: 'Status',       value: request.status,      icon: '📋' },
             ].map(({ label, value, icon }) => (
               <div key={label} className="bg-gray-50 rounded-xl p-4">
                 <div className="text-xl mb-1">{icon}</div>
@@ -201,11 +208,9 @@ const RequestDetail = () => {
             ))}
           </div>
 
-          {/* ── Requester Info ── */}
+          {/* ── Posted By ── */}
           <div className="border rounded-xl p-4">
-            <h3 className="font-semibold text-gray-700 mb-3">
-              👤 Posted By
-            </h3>
+            <h3 className="font-semibold text-gray-700 mb-3">👤 Posted By</h3>
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center
@@ -218,7 +223,7 @@ const RequestDetail = () => {
                 <p className="font-medium text-gray-800">
                   {request.requesterId?.name}
                 </p>
-                {/* Only show phone to non-owners when request is open */}
+                {/* Only show phone number to non-owners on open requests */}
                 {!isOwner && request.status === 'open' && (
                   <p className="text-sm text-gray-500">
                     📞 {request.requesterId?.phone}
@@ -228,7 +233,7 @@ const RequestDetail = () => {
             </div>
           </div>
 
-          {/* ── Notes (if any) ── */}
+          {/* ── Notes ── */}
           {request.notes && (
             <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
               <h3 className="font-semibold text-gray-700 mb-1">📝 Notes</h3>
@@ -236,12 +241,11 @@ const RequestDetail = () => {
             </div>
           )}
 
-          {/* ── Respondents ── */}
+          {/* ── Donor Responses ── */}
           <div>
             <h3 className="font-semibold text-gray-700 mb-3">
               🩸 Donor Responses ({request.respondents?.length || 0})
             </h3>
-
             {request.respondents?.length === 0 ? (
               <p className="text-sm text-gray-400 bg-gray-50 rounded-xl p-4 text-center">
                 No donors have responded yet
@@ -250,8 +254,8 @@ const RequestDetail = () => {
               <div className="space-y-2">
                 {request.respondents.map((r, index) => (
                   <div key={index}
-                    className="flex items-center justify-between bg-gray-50
-                               rounded-xl px-4 py-3">
+                    className="flex items-center justify-between
+                               bg-gray-50 rounded-xl px-4 py-3">
                     <span className="text-sm text-gray-700">
                       Donor {index + 1}
                     </span>
@@ -268,11 +272,11 @@ const RequestDetail = () => {
             )}
           </div>
 
-          {/* ── Action Buttons ── */}
+          {/* ── Action Buttons (only for open requests) ── */}
           {request.status === 'open' && (
             <div className="border-t pt-4 space-y-3">
 
-              {/* Owner actions */}
+              {/* Owner: close request */}
               {isOwner && (
                 <button
                   onClick={handleClose}
@@ -285,7 +289,7 @@ const RequestDetail = () => {
                 </button>
               )}
 
-              {/* Donor actions — only for non-owners */}
+              {/* Non-owner donor: accept or decline */}
               {!isOwner && !myResponse && (
                 <div className="flex gap-3">
                   <button
@@ -301,26 +305,28 @@ const RequestDetail = () => {
                     onClick={() => handleRespond('decline')}
                     disabled={responding}
                     className="flex-1 py-3 rounded-xl font-semibold border-2
-                               transition disabled:opacity-50 text-gray-600
-                               hover:bg-gray-50"
+                               text-gray-600 hover:bg-gray-50
+                               transition disabled:opacity-50"
                   >
                     Decline
                   </button>
                 </div>
               )}
 
-              {/* Already responded message */}
+              {/* Already responded */}
               {myResponse && (
-                <div className="bg-green-50 text-green-700 p-4 rounded-xl text-center text-sm">
+                <div className="bg-green-50 text-green-700 p-4 rounded-xl
+                                text-center text-sm">
                   ✅ You already responded to this request
                 </div>
               )}
             </div>
           )}
 
-          {/* Fulfilled/expired message */}
+          {/* Fulfilled or expired message */}
           {request.status !== 'open' && (
-            <div className="bg-gray-50 text-gray-500 p-4 rounded-xl text-center text-sm">
+            <div className="bg-gray-50 text-gray-500 p-4 rounded-xl
+                            text-center text-sm">
               {request.status === 'fulfilled'
                 ? '✅ This request has been fulfilled. Thank you!'
                 : '⏰ This request has expired.'}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 // ── Constants ─────────────────────────────────────────────────
 const BLOOD_TYPES = ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -92,24 +93,29 @@ const Browse = () => {
   // ── Respond to Request ────────────────────────────────────
   // Called when donor clicks Accept or Decline on a request
   const handleRespond = async (requestId, action) => {
-    setResponding(requestId); // show loading on that specific card
+  setResponding(requestId);
+  try {
+    const res = await axios.put(
+      `http://localhost:5000/api/requests/${requestId}/respond`,
+      { action },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/requests/${requestId}/respond`,
-        { action }, // 'accept' or 'decline'
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      alert(res.data.message); // simple alert for now (will improve later)
-      fetchRequests();          // refresh list after responding
-
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to respond');
-    } finally {
-      setResponding(null);
+    //  Replace alert() with toast
+    if (action === 'accept') {
+      toast.success(res.data.message);
+    } else {
+      toast('You declined this request', { icon: '👋' });
     }
-  };
+
+    fetchRequests();
+  } catch (err) {
+    //  Replace alert() with toast.error
+    toast.error(err.response?.data?.message || 'Failed to respond');
+  } finally {
+    setResponding(null);
+  }
+};
 
   // ── Render ────────────────────────────────────────────────
   return (

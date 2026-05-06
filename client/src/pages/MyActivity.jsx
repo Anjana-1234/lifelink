@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate }         from 'react-router-dom';
-import { useAuth }             from '../context/AuthContext';
-import axios                   from 'axios';
+import { useNavigate }  from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+import toast from 'react-hot-toast'; 
 
 // ── Urgency badge config — same as Browse page ────────────────
 const URGENCY_CONFIG = {
@@ -66,23 +67,22 @@ const MyActivity = () => {
 
   // ── Close a request ───────────────────────────────────────
   const handleClose = async (requestId) => {
-    // Confirm before closing — irreversible action
-    if (!window.confirm('Mark this request as fulfilled?')) return;
-
-    setClosingId(requestId);
-    try {
-      await axios.put(
-        `http://localhost:5000/api/requests/${requestId}/close`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchMyData(); // refresh data after closing
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to close request');
-    } finally {
-      setClosingId(null);
-    }
-  };
+  if (!window.confirm('Mark this request as fulfilled?')) return;
+  setClosingId(requestId);
+  try {
+    await axios.put(
+      `http://localhost:5000/api/requests/${requestId}/close`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    toast.success('Request fulfilled! Thank you for saving a life! 🩸');
+    fetchMyData();
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to close request');
+  } finally {
+    setClosingId(null);
+  }
+};
 
   // ── Loading State ─────────────────────────────────────────
   if (loading) {
@@ -163,7 +163,7 @@ const MyActivity = () => {
 
                 return (
                   <div key={request._id}
-                    className="bg-white rounded-2xl shadow p-6">
+                    className="bg-gray-200 rounded-2xl shadow p-6">
 
                     {/* ── Top Row: Hospital + Badges ── */}
                     <div className="flex items-start justify-between gap-4 mb-3">
@@ -254,7 +254,7 @@ const MyActivity = () => {
           TAB 2: DONOR PROFILE
       ════════════════════════════════════════ */}
       {activeTab === 'donor' && (
-        <div className="bg-white rounded-2xl shadow p-8">
+        <div className="bg-gray-200 rounded-2xl shadow p-8">
 
           {donorProfile ? (
             <div>
