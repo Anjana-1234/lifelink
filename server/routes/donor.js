@@ -1,53 +1,65 @@
-const express = require('express');
-const router  = express.Router();
-const Donor   = require('../models/Donor');
-const protect = require('../middleware/auth');
+const express          = require('express');
+const router           = express.Router();
+const Donor            = require('../models/Donor');
+const protect          = require('../middleware/auth');
 const { checkEligibility } = require('../utils/eligibility');
 
 // ─────────────────────────────────────────────────────────────
 // @route   POST /api/donors/profile
-// @desc    Create or update donor profile
-// @access  Private (must be logged in)
+// @desc    Create or update donor health profile
+//          Recalculates eligibility every time it's called
+// @access  Private
 // ─────────────────────────────────────────────────────────────
 router.post('/profile', protect, async (req, res) => {
   try {
     const { bloodType, location, age, weight, healthFlags } = req.body;
 
-    // Check eligibility based on submitted health answers
+    // Find existing donor profile for this user
+    let donor = await Donor.findOne({ userId: req.user.id });
+
+    // Use existing lastDonationDate when rechecking eligibility
+    // So the 56-day rule is still enforced even when updating other flags
+    const lastDonationDate = donor?.lastDonationDate || null;
+
+    // Recalculate eligibility with ALL rules:
+    // 1. Age check (18-65)
+    // 2. Weight check (50kg+)
+    // 3. 56-day cooldown since last donation
+    // 4. Health flags (fever, antibiotics, tattoo, etc.)
     const eligibilityResult = checkEligibility(
       healthFlags || {},
       Number(age),
       Number(weight),
-      null // no previous donation on first profile creation
+      lastDonationDate // pass existing donation date — keeps cooldown active
     );
 
-    // Check if donor profile already exists for this user
-    let donor = await Donor.findOne({ userId: req.user.id });
-
     if (donor) {
-      // Update existing donor profile
-      donor.bloodType   = bloodType;
-      donor.location    = location;
-      donor.age         = Number(age);
-      donor.weight      = Number(weight);
-      donor.healthFlags = healthFlags || {};
-      donor.isEligible  = eligibilityResult.eligible;
+      // ── Update existing profile ──
+      donor.bloodType    = bloodType;
+      donor.location     = location;
+      donor.age          = Number(age);
+      donor.weight       = Number(weight);
+      donor.healthFlags  = healthFlags || {};
+      donor.isEligible   = eligibilityResult.eligible;
+      // Keep isAvailable in sync with eligibility
+      donor.isAvailable  = eligibilityResult.eligible;
       await donor.save();
     } else {
-      // Create new donor profile linked to logged in user
+      // ── Create new profile ──
       donor = await Donor.create({
-        userId:      req.user.id,  // from JWT token via protect middleware
+        userId:      req.user.id,
         bloodType,
         location,
         age:         Number(age),
         weight:      Number(weight),
         healthFlags: healthFlags || {},
-        isEligible:  eligibilityResult.eligible
+        isEligible:  eligibilityResult.eligible,
+        isAvailable: eligibilityResult.eligible
       });
     }
 
     res.status(201).json({
-      success: true,
+      success:     true,
       donor,
       eligibility: eligibilityResult
     });
@@ -65,9 +77,7 @@ router.post('/profile', protect, async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 router.get('/profile', protect, async (req, res) => {
   try {
-    // Find donor profile by userId (linked to logged in user)
     const donor = await Donor.findOne({ userId: req.user.id });
-
     res.json({ success: true, donor });
   } catch (error) {
     console.error('Get donor profile error:', error.message);
@@ -83,13 +93,9 @@ router.get('/profile', protect, async (req, res) => {
 router.get('/eligible/:bloodType/:district', protect, async (req, res) => {
   try {
     const { bloodType, district } = req.params;
-
     const { findMatchingDonors, findCompatibleDonors } = require('../utils/matchDonors');
 
-    // Try exact match first
     let donors = await findMatchingDonors(bloodType, district);
-
-    // If no exact match, try compatible types
     if (donors.length === 0) {
       donors = await findCompatibleDonors(bloodType, district);
     }
