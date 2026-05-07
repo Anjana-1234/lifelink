@@ -369,7 +369,7 @@ const RequestBlood = () => {
 
         {/* Reminder about expiry */}
         <p className="text-center text-xs text-gray-400">
-          ⏰ Requests automatically expire after 48 hours if not fulfilled.
+           Requests automatically expire after 48 hours if not fulfilled.
         </p>
 
       </form>

@@ -105,7 +105,7 @@ const Browse = () => {
     if (action === 'accept') {
       toast.success(res.data.message);
     } else {
-      toast('You declined this request', { icon: '👋' });
+      toast('You declined this request');
     }
 
     fetchRequests();
@@ -271,7 +271,7 @@ const Browse = () => {
 
                     {/* Location */}
                     <p className="text-sm text-gray-500">
-                      📍 {request.location?.city
+                       {request.location?.city
                         ? `${request.location.city}, ${request.location.district}`
                         : request.location?.district}
                     </p>

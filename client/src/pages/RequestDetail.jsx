@@ -167,7 +167,7 @@ const RequestDetail = () => {
             <div>
               <h1 className="text-2xl font-bold">{request.hospital}</h1>
               <p className="text-white/80 mt-1">
-                📍 {request.location?.city
+                 {request.location?.city
                   ? `${request.location.city}, `
                   : ''}{request.location?.district}
               </p>
@@ -285,7 +285,7 @@ const RequestDetail = () => {
                              transition disabled:opacity-50"
                   style={{ backgroundColor: '#15803D' }}
                 >
-                  {closing ? 'Closing...' : '✅ Mark as Fulfilled'}
+                  {closing ? 'Closing...' : ' Mark as Fulfilled'}
                 </button>
               )}
 

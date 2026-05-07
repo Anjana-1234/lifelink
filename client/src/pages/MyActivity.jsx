@@ -111,8 +111,8 @@ const MyActivity = () => {
       {/* Lets user switch between their requests and donor profile */}
       <div className="flex gap-2 mb-6 bg-white rounded-xl shadow p-1 w-fit">
         {[
-          { key: 'requests', label: '🏥 My Requests' },
-          { key: 'donor',    label: '🩸 Donor Profile' },
+          { key: 'requests', label: ' My Requests' },
+          { key: 'donor',    label: ' Donor Profile' },
         ].map(tab => (
           <button
             key={tab.key}
@@ -183,7 +183,7 @@ const MyActivity = () => {
                             {request.hospital}
                           </h3>
                           <p className="text-sm text-gray-500">
-                            📍 {request.location?.city
+                             {request.location?.city
                               ? `${request.location.city}, `
                               : ''}{request.location?.district}
                           </p>
@@ -238,7 +238,7 @@ const MyActivity = () => {
                         >
                           {closingId === request._id
                             ? 'Closing...'
-                            : '✅ Mark Fulfilled'}
+                            : ' Mark Fulfilled'}
                         </button>
                       )}
                     </div>

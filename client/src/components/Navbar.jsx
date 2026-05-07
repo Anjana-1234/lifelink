@@ -5,10 +5,10 @@ import logo from '../assets/logo.png';
 
 // ── Navigation Links Config ───────────────────────────────────
 const NAV_LINKS = [
-  { path: '/dashboard',     label: 'Home'            },
-  { path: '/browse',        label: 'Browse Requests' },
-  { path: '/request-blood', label: 'Request Blood'   },
-  { path: '/my-activity',   label: 'My Activity'     },
+  { path: '/dashboard',     label: 'Home'           },
+  { path: '/browse',        label: 'Browse Requests'},
+  { path: '/request-blood', label: 'Request Blood'  },
+  { path: '/my-activity',   label: 'My Activity'    },
 ];
 
 // ── Bell Icon (SVG) ───────────────────────────────────────────
@@ -170,7 +170,6 @@ const Navbar = () => {
 
                   {/* Empty state — placeholder until Socket.io is built */}
                   <div className="py-10 text-center">
-                    <div className="text-3xl mb-2">🔔</div>
                     <p className="text-gray-500 text-sm">
                       No notifications yet
                     </p>
