@@ -2,6 +2,7 @@ const BloodRequest = require('../models/BloodRequest');
 const Donor        = require('../models/Donor');
 const { findMatchingDonors, findCompatibleDonors } = require('../utils/matchDonors');
 const { sendDonorNotification } = require('../utils/sendEmail');
+const Notification = require('../models/Notification');
 
 // ─────────────────────────────────────────────────────────────
 // @route   POST /api/requests
@@ -46,22 +47,46 @@ const createRequest = async (req, res) => {
     });
 
     // ── Send email notifications to matching donors ───────────────
-// We use Promise.all to send all emails at the same time (parallel)
-// We DON'T await this — emails run in background so API responds fast
-// User gets instant response, emails send behind the scenes
+    // We use Promise.all to send all emails at the same time (parallel)
+    // We DON'T await this — emails run in background so API responds fast
+    // User gets instant response, emails send behind the scenes
+    if (matchingDonors.length > 0) {
+      Promise.all(
+      matchingDonors.map(donor =>
+        sendDonorNotification({
+          donorEmail: donor.userId?.email,
+          donorName:  donor.userId?.name  || 'Donor',
+          request:    { bloodType, hospital, location, urgency }
+        })
+      )
+      ).then(results => {
+      const sent = results.filter(Boolean).length;
+        console.log(`📧 Emails sent: ${sent}/${matchingDonors.length}`);
+      });
+    }
+
+// ── Save in-app notifications for matching donors ─────────────
+// Each donor gets a notification saved to DB
+// This powers the bell icon in the navbar
 if (matchingDonors.length > 0) {
-  Promise.all(
-    matchingDonors.map(donor =>
-      sendDonorNotification({
-        donorEmail: donor.userId?.email,
-        donorName:  donor.userId?.name  || 'Donor',
-        request:    { bloodType, hospital, location, urgency }
-      })
-    )
-  ).then(results => {
-    const sent = results.filter(Boolean).length;
-    console.log(`📧 Emails sent: ${sent}/${matchingDonors.length}`);
-  });
+  const notifications = matchingDonors.map(donor => ({
+    userId:  donor.userId?._id,
+    type:    'blood_request',
+    message: `🩸 Urgent! ${bloodType} blood needed at ${hospital} in ${location.district}`,
+    link:    `/request/${request._id}`,
+    isRead:  false,
+    metadata: {
+      bloodType,
+      hospital,
+      district:  location.district,
+      urgency,
+      requestId: request._id
+    }
+  }));
+
+  // Insert all notifications at once — more efficient than one by one
+  await Notification.insertMany(notifications);
+  console.log(`🔔 Saved ${notifications.length} in-app notification(s)`);
 }
 
   } catch (error) {

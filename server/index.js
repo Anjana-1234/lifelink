@@ -37,7 +37,7 @@ mongoose.connect(process.env.MONGO_URI)
     unlockEligibleDonors();
   })
   .catch(err => console.log('❌ MongoDB error:', err));
-  
+
 // ── Routes ────────────────────────────────────────────────────
 // Each route file handles a specific feature
 // The prefix here + the path in route file = full URL
@@ -46,6 +46,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/auth',     require('./routes/auth'));     // register, login, getMe
 app.use('/api/donors',   require('./routes/donor'));    // donor profile routes
 app.use('/api/requests', require('./routes/request')); // blood request routes
+app.use('/api/notifications', require('./routes/notification'));
 
 // ── Test Route ────────────────────────────────────────────────
 // Visit http://localhost:5000 to confirm API is running
