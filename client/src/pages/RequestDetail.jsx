@@ -65,7 +65,7 @@ const RequestDetail = () => {
       if (action === 'accept') {
         toast.success('You accepted! The requester will contact you shortly. 🩸');
       } else {
-        toast('You declined this request', { icon: '👋' });
+        toast('You declined this request');
       }
 
       fetchRequest(); // refresh to update respondents list

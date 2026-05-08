@@ -1,6 +1,7 @@
 const express  = require('express');
 const mongoose = require('mongoose');
 const cors     = require('cors');
+const { verifyEmailConfig } = require('./utils/sendEmail');
 require('dotenv').config();
 
 // ── Import Cron Jobs ──────────────────────────────────────────
@@ -25,6 +26,18 @@ mongoose.connect(process.env.MONGO_URI)
   })
   .catch(err => console.log('❌ MongoDB error:', err));
 
+  mongoose.connect(process.env.MONGO_URI)
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+
+    // Verify email is working on startup — same as Orato does
+    await verifyEmailConfig();
+
+    expireOldRequests();
+    unlockEligibleDonors();
+  })
+  .catch(err => console.log('❌ MongoDB error:', err));
+  
 // ── Routes ────────────────────────────────────────────────────
 // Each route file handles a specific feature
 // The prefix here + the path in route file = full URL
