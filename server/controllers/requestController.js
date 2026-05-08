@@ -1,6 +1,7 @@
 const BloodRequest = require('../models/BloodRequest');
 const Donor        = require('../models/Donor');
 const { findMatchingDonors, findCompatibleDonors } = require('../utils/matchDonors');
+const { sendDonorNotification } = require('../utils/sendEmail');
 
 // ─────────────────────────────────────────────────────────────
 // @route   POST /api/requests
@@ -43,6 +44,25 @@ const createRequest = async (req, res) => {
         ? `Request posted! Found ${matchingDonors.length} eligible donor(s) in ${location.district}.`
         : `Request posted! No donors found in ${location.district} right now.`
     });
+
+    // ── Send email notifications to matching donors ───────────────
+// We use Promise.all to send all emails at the same time (parallel)
+// We DON'T await this — emails run in background so API responds fast
+// User gets instant response, emails send behind the scenes
+if (matchingDonors.length > 0) {
+  Promise.all(
+    matchingDonors.map(donor =>
+      sendDonorNotification({
+        donorEmail: donor.userId?.email,
+        donorName:  donor.userId?.name  || 'Donor',
+        request:    { bloodType, hospital, location, urgency }
+      })
+    )
+  ).then(results => {
+    const sent = results.filter(Boolean).length;
+    console.log(`📧 Emails sent: ${sent}/${matchingDonors.length}`);
+  });
+}
 
   } catch (error) {
     console.error('Create request error:', error.message);
