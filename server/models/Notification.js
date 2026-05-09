@@ -1,45 +1,47 @@
 const mongoose = require('mongoose');
 
 // ── Notification Schema ───────────────────────────────────────
-// Every notification is stored here
-// When a blood request is posted, a notification is created
-// for each matching donor so they can see it in the bell icon
+// Stores every in-app notification for each user
+// Powers the bell icon in the navbar
+// When a blood request is posted → notification created for each matching donor
 const NotificationSchema = new mongoose.Schema({
 
-  // Who receives this notification
+  // Who this notification belongs to
   userId: {
     type:     mongoose.Schema.Types.ObjectId,
     ref:      'User',
     required: true
   },
 
-  // Type of notification — makes it easy to filter later
+  // Type of notification — useful for filtering/styling later
   type: {
-    type: String,
-    enum: ['blood_request', 'donor_accepted', 'request_fulfilled'],
+    type:    String,
+    enum:    ['blood_request', 'donor_accepted', 'request_fulfilled'],
     default: 'blood_request'
   },
 
-  // The message shown in the bell dropdown
+  // The text shown in the bell dropdown
   message: {
     type:     String,
     required: true
   },
 
-  // Link to navigate to when notification is clicked
+  // Where to navigate when this notification is clicked
   link: {
     type:    String,
     default: '/browse'
   },
 
-  // Has the user seen this notification?
-  // Used to show/hide the red badge on the bell icon
+  // Has the user opened/read this notification?
+  // false = unread (shows red badge on bell icon)
+  // true  = read   (no badge)
   isRead: {
     type:    Boolean,
-    default: false  // all notifications start as unread
+    default: false
   },
 
-  // Extra data — stores request details for display
+  // Extra details about the blood request
+  // Used to show blood type badge in notification dropdown
   metadata: {
     bloodType: String,
     hospital:  String,
@@ -48,6 +50,6 @@ const NotificationSchema = new mongoose.Schema({
     requestId: mongoose.Schema.Types.ObjectId
   }
 
-}, { timestamps: true }); // createdAt tells us when notification was sent
+}, { timestamps: true }); // createdAt used for "2 mins ago" display
 
 module.exports = mongoose.model('Notification', NotificationSchema);

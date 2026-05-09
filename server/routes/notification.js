@@ -5,18 +5,18 @@ const Notification = require('../models/Notification');
 
 // ─────────────────────────────────────────────────────────────
 // @route   GET /api/notifications
-// @desc    Get all notifications for logged-in user
+// @desc    Get all notifications for the logged-in user
+//          Also returns unread count for the bell badge
 // @access  Private
 // ─────────────────────────────────────────────────────────────
 router.get('/', protect, async (req, res) => {
   try {
-    // Get latest 20 notifications for this user
-    // Most recent first
+    // Get latest 20 notifications, newest first
     const notifications = await Notification.find({ userId: req.user.id })
       .sort({ createdAt: -1 })
       .limit(20);
 
-    // Count unread notifications — used for red badge number
+    // Count unread — this number shows on the red badge
     const unreadCount = await Notification.countDocuments({
       userId: req.user.id,
       isRead: false
@@ -31,7 +31,8 @@ router.get('/', protect, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // @route   PUT /api/notifications/read-all
-// @desc    Mark all notifications as read
+// @desc    Mark ALL notifications as read
+//          Called when user opens the bell dropdown
 // @access  Private
 // ─────────────────────────────────────────────────────────────
 router.put('/read-all', protect, async (req, res) => {
@@ -40,7 +41,7 @@ router.put('/read-all', protect, async (req, res) => {
       { userId: req.user.id, isRead: false },
       { isRead: true }
     );
-    res.json({ success: true, message: 'All notifications marked as read' });
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -48,12 +49,16 @@ router.put('/read-all', protect, async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // @route   PUT /api/notifications/:id/read
-// @desc    Mark single notification as read (when clicked)
+// @desc    Mark ONE notification as read
+//          Called when user clicks a specific notification
 // @access  Private
 // ─────────────────────────────────────────────────────────────
 router.put('/:id/read', protect, async (req, res) => {
   try {
-    await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+    await Notification.findByIdAndUpdate(
+      req.params.id,
+      { isRead: true }
+    );
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
