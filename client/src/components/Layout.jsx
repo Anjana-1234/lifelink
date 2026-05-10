@@ -1,21 +1,21 @@
-import Navbar from './Navbar';
+import Navbar  from './Navbar';
+import Footer  from './Footer';
 
-// ── Layout Component ──────────────────────────────────────────
-// Wraps all private pages with the Navbar
-// Usage: <Layout><YourPage /></Layout>
-//
-// This pattern is called "layout component" — very common in React apps
-// Instead of adding <Navbar /> to every page, we wrap once here
+// Layout wraps all private pages
+// Navbar at top, Footer at bottom, page content in middle
 const Layout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar appears on top of every private page */}
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Navbar — always visible at top */}
       <Navbar />
 
-      {/* children = the actual page content passed between tags */}
-      <main>
+      {/* Page content — grows to fill available space */}
+      <main className="flex-1">
         {children}
       </main>
+
+      {/* Footer — always at bottom */}
+      <Footer />
     </div>
   );
 };
