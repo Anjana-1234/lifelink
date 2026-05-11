@@ -20,13 +20,13 @@ const Footer = () => {
             />
 
             <p className="text-gray-400 text-sm leading-relaxed mb-3">
-              LifeLink connects donors instantly — matching blood donors
+              LifeLink connects donors instantly - matching blood donors
               with patients in emergencies across Sri Lanka.
             </p>
 
             <p
               className="text-sm font-bold tracking-widest uppercase"
-              style={{ color: '#C0171D' }}
+              style={{ color: '#d3676a' }}
             >
               Find. Connect. Save Lives.
             </p>
@@ -52,7 +52,7 @@ const Footer = () => {
                 <li key={path}>
                   <button
                     onClick={() => navigate(path)}
-                    className="text-gray-400 hover:text-white text-sm
+                    className="text-gray-300 hover:text-white text-sm
                                transition-colors text-left flex items-center gap-2"
                   >
                     
@@ -79,7 +79,7 @@ const Footer = () => {
                 <span className="text-lg">✉️</span>
 
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">
+                  <p className="text-gray-200 text-xs uppercase tracking-wide mb-0.5">
                     Email
                   </p>
 
@@ -98,7 +98,7 @@ const Footer = () => {
                 <span className="text-lg">📞</span>
 
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">
+                  <p className="text-gray-200 text-xs uppercase tracking-wide mb-0.5">
                     Phone
                   </p>
 
@@ -114,11 +114,11 @@ const Footer = () => {
 
               {/* Location */}
               <li className="flex items-start gap-3">
-                <span className="text-lg">📍</span>
+                <span className="text-lg">📍 </span>
 
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">
-                    Location
+                  <p className="text-gray-200 text-xs uppercase tracking-wide mb-0.5">
+                     Location
                   </p>
 
                   <p className="text-gray-300 text-sm">
@@ -132,24 +132,20 @@ const Footer = () => {
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div
-        className="border-t px-6 py-4"
-        style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-      >
-        <div
-          className="max-w-6xl mx-auto flex flex-col md:flex-row
-                     items-center justify-between gap-2"
-        >
+<div
+  className="border-t px-6 py-4"
+  style={{ borderColor: 'rgba(255,255,255,0.08)' }}
+>
+  <div className="max-w-6xl mx-auto flex flex-col items-center
+                  justify-center gap-3 text-center">
 
-          {/* Copyright */}
-          <p className="text-gray-500 text-xs text-center md:text-center mb=50">
-            © 2026 LifeLink. All rights reserved. Built with ❤️ to save lives.
-          </p>
+    {/* Copyright — centered */}
+    <p className="text-gray-500 text-xs text-center">
+      © 2026 LifeLink. All rights reserved. Built with ❤️ to save lives.
+    </p>
 
-          
-          
-        </div>
-      </div>
+    </div>
+    </div>
     </footer>
   );
 };
