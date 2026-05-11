@@ -70,7 +70,7 @@ const Dashboard = () => {
             />
 
             {/* Subtitle */}
-            <p className="text-gray-800 text-base md:text-lg
+            <p className="text-gray-900 text-bold md:text-lg
                           leading-relaxed mb-8 max-w-md">
               Every second counts in a blood emergency.
               Connect with eligible donors nearby or post
@@ -105,7 +105,7 @@ const Dashboard = () => {
               {[
                 { value: '25+',    label: 'Districts'       },
                 { value: '56',     label: 'Day cooldown'    },
-                { value: '3 lives',label: 'Per donation'    },
+                { value: '5 lives',label: 'Per donation'    },
               ].map(({ value, label }) => (
                 <div key={label}>
                   <p
