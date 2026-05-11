@@ -15,7 +15,7 @@ const Dashboard = () => {
       ════════════════════════════════════════════════════ */}
       <div
         className="relative overflow-hidden"
-        style={{ minHeight: '520px', backgroundColor: '#88898b' }}
+        style={{ minHeight: '520px', backgroundColor: '#959697' }}
       >
         {/* ── Background decorative circles ── */}
         {/* These add depth without covering the image */}
@@ -45,9 +45,9 @@ const Dashboard = () => {
             <div
               className="inline-flex items-center gap-2 px-4 py-1.5
                          rounded-full text-xs font-semibold mb-6"
-              style={{ backgroundColor: 'rgba(192,23,29,0.25)',
-                       border: '1px solid rgba(192,23,29,0.5)',
-                       color: '#E8353B' }}
+              style={{ backgroundColor: 'rgba(216, 210, 210, 0.25)',
+                       border: '2px solid rgba(90, 28, 30, 0.5)',
+                       color: '#9e1e23' }}
             >
               🩸 Sri Lanka's Blood Donor Network
             </div>
@@ -58,7 +58,7 @@ const Dashboard = () => {
             </h1>
             <h1
               className="text-4xl md:text-6xl font-black leading-tight mb-6"
-              style={{ color: '#1c0c61' }}
+              style={{ color: '#130b35' }}
             >
               {user?.name?.split(' ')[0]}! 
             </h1>
@@ -66,15 +66,15 @@ const Dashboard = () => {
             {/* Red underline accent */}
             <div
               className="w-20 h-1.5 rounded-full mb-6"
-              style={{ backgroundColor: '#C0171D' }}
+              style={{ backgroundColor: '#1e0e42' }}
             />
 
             {/* Subtitle */}
-            <p className="text-gray-300 text-base md:text-lg
+            <p className="text-gray-800 text-base md:text-lg
                           leading-relaxed mb-8 max-w-md">
               Every second counts in a blood emergency.
               Connect with eligible donors nearby or post
-              an urgent request — <strong className="text-white">
+              an urgent request - <strong className="text-white">
               instantly and for free.</strong>
             </p>
 
@@ -96,7 +96,7 @@ const Dashboard = () => {
                            shadow-lg"
                 style={{ color: '#1B2A4A' }}
               >
-                Request Blood 🏥
+                Request Blood 
               </button>
             </div>
 
@@ -110,11 +110,11 @@ const Dashboard = () => {
                 <div key={label}>
                   <p
                     className="text-2xl font-black"
-                    style={{ color: '#E8353B' }}
+                    style={{ color: '#1c1846' }}
                   >
                     {value}
                   </p>
-                  <p className="text-gray-400 text-xs mt-0.5">{label}</p>
+                  <p className="text-black text-xs mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
@@ -170,7 +170,7 @@ const Dashboard = () => {
           {/* Donate Card */}
           <div
             onClick={() => navigate('/my-activity')}
-            className="bg-white rounded-2xl shadow p-8 text-center
+            className="bg-gray-200 rounded-2xl shadow p-8 text-center
                        cursor-pointer border-2 border-transparent
                        hover:shadow-lg transition group"
             onMouseEnter={e => e.currentTarget.style.borderColor = '#C0171D'}
@@ -196,7 +196,7 @@ const Dashboard = () => {
           {/* Request Card */}
           <div
             onClick={() => navigate('/request-blood')}
-            className="bg-white rounded-2xl shadow p-8 text-center
+            className="bg-gray-200 rounded-2xl shadow p-8 text-center
                        cursor-pointer border-2 border-transparent
                        hover:shadow-lg transition"
             onMouseEnter={e => e.currentTarget.style.borderColor = '#1B2A4A'}
@@ -225,9 +225,9 @@ const Dashboard = () => {
           className="rounded-2xl p-8 mb-8 text-white"
           style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}
         >
-          <h2 className="text-2xl font-bold mb-3">Our Mission</h2>
+          <h3 className="text-2xl font-bold mb-3">Our Mission</h3>
           <p className="text-white/85 leading-relaxed text-sm md:text-base">
-            LifeLink was built to solve a critical problem — finding blood
+            LifeLink was built to solve a critical problem - finding blood
             donors in emergencies is still done through WhatsApp forwards
             and phone calls. We believe technology can do better. Our mission
             is to <strong className="text-white">connect every patient with
@@ -237,7 +237,7 @@ const Dashboard = () => {
         </div>
 
         {/* ── How It Works ── */}
-        <div className="bg-white rounded-2xl shadow p-8 mb-8">
+        <div className="bg-gray-200 rounded-2xl shadow p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">
             How LifeLink Works
           </h2>
@@ -272,27 +272,27 @@ const Dashboard = () => {
                   {step}
                 </div>
                 <div className="text-3xl mb-2">{icon}</div>
-                <h3 className="font-bold text-gray-800 mb-1">{title}</h3>
-                <p className="text-gray-500 text-sm">{desc}</p>
+                <h3 className="font-bold text-navy blue mb-1">{title}</h3>
+                <p className="text-gray-800 text-sm">{desc}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Blood Type Info ── */}
-        <div className="bg-white rounded-2xl shadow p-8 mb-8">
+        <div className="bg-white border border-gray-500 rounded-2xl shadow p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-2">
             🩸 Did You Know?
           </h2>
-          <p className="text-gray-500 text-sm mb-6">
+          <p className="text-gray-700 text-small mb-6">
             Blood type compatibility matters in emergencies:
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { type: 'O-',  label: 'Universal Donor',     color: '#C0171D', note: 'Can donate to anyone'    },
-              { type: 'AB+', label: 'Universal Recipient',  color: '#1B2A4A', note: 'Can receive from anyone' },
-              { type: 'O+',  label: 'Most Common',         color: '#B45309', note: '38% of population'       },
-              { type: 'AB-', label: 'Most Rare',           color: '#6B7280', note: 'Only 1% of population'   },
+              { type: 'AB+', label: 'Universal Recipient', color: '#1B2A4A', note: 'Can receive from anyone' },
+              { type: 'O+',  label: 'Most Common',         color: '#C0171D', note: '38% of population'       },
+              { type: 'AB-', label: 'Most Rare',           color: '#1B2A4A', note: 'Only 1% of population'   },
             ].map(({ type, label, color, note }) => (
               <div
                 key={type}
@@ -302,10 +302,10 @@ const Dashboard = () => {
                 <div className="text-2xl font-black mb-1" style={{ color }}>
                   {type}
                 </div>
-                <div className="text-xs font-semibold mb-1" style={{ color }}>
+                <div className="text-small font-semibold mb-1" style={{ color }}>
                   {label}
                 </div>
-                <div className="text-xs text-gray-500">{note}</div>
+                <div className="text-medium text-gray-800">{note}</div>
               </div>
             ))}
           </div>
@@ -313,7 +313,7 @@ const Dashboard = () => {
 
         {/* ── Quick Actions ── */}
         <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="font-semibold text-gray-700 mb-4">⚡ Quick Actions</h2>
+          <h2 className="font-semibold text-gray-700 mb-4"> Quick Actions</h2>
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('/browse')}
