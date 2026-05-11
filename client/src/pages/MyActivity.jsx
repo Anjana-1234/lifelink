@@ -66,23 +66,66 @@ const MyActivity = () => {
   };
 
   // ── Close a request ───────────────────────────────────────
-  const handleClose = async (requestId) => {
-  if (!window.confirm('Mark this request as fulfilled?')) return;
-  setClosingId(requestId);
-  try {
-    await axios.put(
-      `http://localhost:5000/api/requests/${requestId}/close`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    toast.success('Request fulfilled! Thank you for saving a life! 🩸');
-    fetchMyData();
-  } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to close request');
-  } finally {
-    setClosingId(null);
-  }
+const handleClose = async (requestId) => {
+
+  // Replace window.confirm() with toast confirmation
+  // Creates a custom toast with Yes/No buttons
+  toast((t) => (
+    <div className="flex flex-col gap-3">
+      <p className="font-semibold text-gray-800 text-sm">
+        Mark this request as fulfilled?
+      </p>
+      <p className="text-xs text-gray-500">
+        This action cannot be undone.
+      </p>
+      <div className="flex gap-2">
+        {/* Confirm button */}
+        <button
+          onClick={async () => {
+            toast.dismiss(t.id); // close the confirmation toast
+            setClosingId(requestId);
+            try {
+              await axios.put(
+                `http://localhost:5000/api/requests/${requestId}/close`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              toast.success('Request fulfilled! Thank you for saving a life! 🩸');
+              fetchMyData();
+            } catch (err) {
+              toast.error(err.response?.data?.message || 'Failed to close request');
+            } finally {
+              setClosingId(null);
+            }
+          }}
+          className="flex-1 py-1.5 rounded-lg text-white text-xs font-semibold"
+          style={{ backgroundColor: '#15803D' }}
+        >
+           Mark Fulfilled
+        </button>
+
+        {/* Cancel button */}
+        <button
+          onClick={() => toast.dismiss(t.id)} // just close the toast
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold
+                     border border-gray-300 text-gray-600 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ), {
+    duration: 10000,     // stays open 10 seconds
+    position: 'top-center', // center of screen — more visible
+    style: {
+      padding:      '16px',
+      borderRadius: '12px',
+      maxWidth:     '320px',
+      border:       '1px solid #E5E7EB'
+    }
+  });
 };
+
 
   // ── Loading State ─────────────────────────────────────────
   if (loading) {

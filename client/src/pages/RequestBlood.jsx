@@ -364,7 +364,7 @@ const RequestBlood = () => {
                      transition disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ backgroundColor: '#C0171D' }}
         >
-          {loading ? 'Posting Request...' : 'Post Blood Request 🩸'}
+          {loading ? 'Posting Request...' : 'Post Blood Request '}
         </button>
 
         {/* Reminder about expiry */}

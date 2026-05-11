@@ -77,24 +77,61 @@ const RequestDetail = () => {
   };
 
   // ── Mark as Fulfilled ─────────────────────────────────────
-  // Only the requester who posted can close their own request
   const handleClose = async () => {
-    if (!window.confirm('Mark this request as fulfilled?')) return;
-    setClosing(true);
-    try {
-      await axios.put(
-        `http://localhost:5000/api/requests/${id}/close`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success('Request fulfilled! Thank you for saving a life! 🩸');
-      fetchRequest();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to close request');
-    } finally {
-      setClosing(false);
+
+  // Custom toast confirmation instead of window.confirm()
+  toast((t) => (
+    <div className="flex flex-col gap-3">
+      <p className="font-semibold text-gray-800 text-sm">
+       Mark this request as fulfilled?
+      </p>
+      <p className="text-xs text-gray-500">
+        This will close the request for all donors.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={async () => {
+            toast.dismiss(t.id);
+            setClosing(true);
+            try {
+              await axios.put(
+                `http://localhost:5000/api/requests/${id}/close`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              toast.success('Request fulfilled! Thank you for saving a life! 🩸');
+              fetchRequest();
+            } catch (err) {
+              toast.error(err.response?.data?.message || 'Failed to close request');
+            } finally {
+              setClosing(false);
+            }
+          }}
+          className="flex-1 py-1.5 rounded-lg text-white text-xs font-semibold"
+          style={{ backgroundColor: '#15803D' }}
+        >
+           Mark Fulfilled
+        </button>
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="flex-1 py-1.5 rounded-lg text-xs font-semibold
+                     border border-gray-300 text-gray-600 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  ), {
+    duration:  10000,
+    position:  'top-center',
+    style: {
+      padding:      '16px',
+      borderRadius: '12px',
+      maxWidth:     '320px',
+      border:       '1px solid #E5E7EB'
     }
-  };
+  });
+};
 
   // ── Loading State ─────────────────────────────────────────
   if (loading) {
