@@ -160,7 +160,7 @@ const RequestBlood = () => {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">🏥 Request Blood</h1>
+        <h1 className="text-2xl font-bold text-gray-800"> Request Blood</h1>
         <p className="text-gray-500 mt-1">
           Fill in the details below. Eligible donors in your district will be notified.
         </p>

@@ -11,7 +11,15 @@ const app = express();
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(express.json());
-app.use(cors());
+
+// Allow requests from both localhost and production frontend
+app.use(cors({
+  origin: [
+    'http://localhost:3000',                   // local development
+    process.env.FRONTEND_URL,                  // production Vercel URL
+  ],
+  credentials: true
+}));
 
 // ── Database Connection ───────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)

@@ -247,7 +247,7 @@ const RequestDetail = () => {
 
           {/* ── Posted By ── */}
           <div className="border rounded-xl p-4">
-            <h3 className="font-semibold text-gray-700 mb-3">👤 Posted By</h3>
+            <h3 className="font-semibold text-gray-700 mb-3"> Posted By</h3>
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center
