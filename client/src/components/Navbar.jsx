@@ -416,7 +416,7 @@ const Navbar = () => {
                          rounded-lg transition mt-1"
               style={{ color: '#C0171D' }}
             >
-              🚪 Logout
+               Logout
             </button>
           </div>
         </div>
