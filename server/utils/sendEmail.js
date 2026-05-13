@@ -55,7 +55,7 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
     }[urgency] || '🩸';
 
     await transporter.sendMail({
-      from:    `"LifeLink 🩸" <${process.env.EMAIL_USER}>`,
+      from:    `"LifeLink " <${process.env.EMAIL_USER}>`,
       to:      donorEmail,
       subject: `${urgencyEmoji} ${urgency} — ${bloodType} blood needed in ${location.district}`,
 
@@ -120,7 +120,7 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
 
             <!-- Header -->
             <div class="header">
-              <h1 style="margin:0; font-size:26px; font-weight:bold;">🩸 LifeLink</h1>
+              <h1 style="margin:0; font-size:26px; font-weight:bold;"> LifeLink</h1>
               <p style="margin:6px 0 0; color:rgba(255,255,255,0.75); font-size:13px;">
                 FIND. CONNECT. SAVE LIVES.
               </p>
@@ -142,13 +142,13 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
                   ${urgencyEmoji} ${urgency} Blood Request
                 </p>
                 <p style="margin:4px 0; color:#374151; font-size:14px;">
-                  🩸 <strong>Blood Type:</strong> ${bloodType}
+                   <strong>Blood Type:</strong> ${bloodType}
                 </p>
                 <p style="margin:4px 0; color:#374151; font-size:14px;">
-                  🏥 <strong>Hospital:</strong> ${hospital}
+                   <strong>Hospital:</strong> ${hospital}
                 </p>
                 <p style="margin:4px 0; color:#374151; font-size:14px;">
-                  📍 <strong>Location:</strong>
+                   <strong>Location:</strong>
                   ${location.city
                     ? `${location.city}, ${location.district}`
                     : location.district}
@@ -161,7 +161,7 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
                   href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/browse"
                   class="button"
                 >
-                  View Request &amp; Respond 🩸
+                  View Request &amp; Respond 
                 </a>
               </div>
 
