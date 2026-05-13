@@ -36,6 +36,7 @@ const MyActivity = () => {
   const [closingId,    setClosingId]    = useState(null);
   const [activeTab,    setActiveTab]    = useState('requests');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchMyData(); }, []);
 
   const fetchMyData = async () => {

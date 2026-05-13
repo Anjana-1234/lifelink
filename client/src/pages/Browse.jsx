@@ -32,8 +32,7 @@ const timeAgo = (dateString) => {
 };
 
 const Browse = () => {
-  const { token, user } = useAuth();
-  const navigate        = useNavigate();
+  const { token } = useAuth(); 
 
   const [requests,   setRequests]   = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -44,10 +43,10 @@ const Browse = () => {
     district:  'All',
   });
 
-  // Fetch when filters change
-  useEffect(() => {
-    fetchRequests();
-  }, [filters]);
+  /// eslint-disable-next-line react-hooks/exhaustive-deps
+useEffect(() => {
+  fetchRequests();
+}, [filters]);
 
   const fetchRequests = async () => {
     setLoading(true);
