@@ -7,12 +7,17 @@ const nodemailer = require('nodemailer');
 //
 // Users NEVER need to provide any password or credentials
 // They just register with their normal email — we send TO them
+// Use port 587 instead of default — works better on Railway
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host:   'smtp.gmail.com',
+  port:   587,
+  secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.EMAIL_USER, // alertslifelink@gmail.com
-    pass: process.env.EMAIL_PASS, // Gmail App Password (no spaces)
-  }
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // Required for Railway — forces IPv4 instead of IPv6
+  family: 4
 });
 
 // ─────────────────────────────────────────────────────────────
