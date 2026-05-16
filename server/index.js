@@ -8,15 +8,25 @@ const { verifyEmailConfig }                        = require('./utils/sendEmail'
 
 const app = express();
 
-// ── CORS — allow both local and production frontend ───────────
-// This is critical — without correct CORS, frontend can't call backend
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://lifelink-git-main-anjana-1234s-projects.vercel.app',
-    'https://lifelink-8vxummgkq-anjana-1234s-projects.vercel.app',
-    process.env.FRONTEND_URL  // from Railway environment variables
-  ],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin) return callback(null, true);
+
+    // Allow any vercel.app URL + localhost
+    const allowed = [
+      'http://localhost:3000',
+      'https://lifelink-dun-seven.vercel.app',
+      'https://lifelink-8vxummgkq-anjana-1234s-projects.vercel.app',
+      process.env.FRONTEND_URL
+    ];
+
+    if (allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
