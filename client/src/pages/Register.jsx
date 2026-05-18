@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import signinVideo from '../assets/signin.mp4';
 
-// ── Eye Icons (SVG) ─────────────────────────────────────────
-// Same icons used in Login page — consistent across the app
+// ── Eye Icons ─────────────────────────────────────────────────
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none"
     viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -28,7 +28,7 @@ const EyeOffIcon = () => (
   </svg>
 );
 
-// ── Sri Lankan Districts ─────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────
 const DISTRICTS = [
   'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale',
   'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota', 'Jaffna',
@@ -37,12 +37,8 @@ const DISTRICTS = [
   'Polonnaruwa', 'Badulla', 'Monaragala', 'Ratnapura', 'Kegalle'
 ];
 
-// ── Blood Types ──────────────────────────────────────────────
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-// ── Health Flag Questions ────────────────────────────────────
-// Each item: [stateKey, emoji, label]
-// These questions determine if user is currently eligible to donate
 const HEALTH_FLAGS = [
   ['hasFever',          '🤒', 'Currently have fever or flu'],
   ['onAntibiotics',     '💊', 'Currently on antibiotics'],
@@ -56,75 +52,42 @@ const Register = () => {
   const { register } = useAuth();
   const navigate     = useNavigate();
 
-  // ── State ────────────────────────────────────────────────
   const [showPassword, setShowPassword] = useState(false);
   const [error,        setError]        = useState('');
   const [loading,      setLoading]      = useState(false);
 
-  // Basic account information
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', phone: ''
   });
 
-  // Health profile — collected at registration so donors
-  // can be matched instantly in emergencies without extra steps
   const [donorData, setDonorData] = useState({
     bloodType: 'A+',
     location:  { district: 'Colombo', city: '' },
     age:       '',
     weight:    '',
     healthFlags: {
-      hasFever:          false,
-      onAntibiotics:     false,
-      recentSurgery:     false,
-      recentTattoo:      false,
-      isPregnant:        false,
-      hasChronicDisease: false,
+      hasFever: false, onAntibiotics: false, recentSurgery: false,
+      recentTattoo: false, isPregnant: false, hasChronicDisease: false,
     }
   });
 
-  // ── Handlers ─────────────────────────────────────────────
+  const handleChange         = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleDonorChange    = (e) => setDonorData({ ...donorData, [e.target.name]: e.target.value });
+  const handleLocationChange = (e) => setDonorData({
+    ...donorData,
+    location: { ...donorData.location, [e.target.name]: e.target.value }
+  });
+  const handleHealthFlag = (flag) => setDonorData({
+    ...donorData,
+    healthFlags: { ...donorData.healthFlags, [flag]: !donorData.healthFlags[flag] }
+  });
 
-  // Updates basic form fields (name, email, password, phone)
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Updates donor number fields (age, weight)
-  const handleDonorChange = (e) => {
-    setDonorData({ ...donorData, [e.target.name]: e.target.value });
-  };
-
-  // Updates location fields (district, city)
-  const handleLocationChange = (e) => {
-    setDonorData({
-      ...donorData,
-      location: { ...donorData.location, [e.target.name]: e.target.value }
-    });
-  };
-
-  // Toggles a health flag checkbox on/off
-  const handleHealthFlag = (flag) => {
-    setDonorData({
-      ...donorData,
-      healthFlags: {
-        ...donorData.healthFlags,
-        [flag]: !donorData.healthFlags[flag] // flip true→false or false→true
-      }
-    });
-  };
-
-  // ── Submit ───────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
-      // Send basic info + health profile together to backend
       await register({ ...formData, donorDetails: donorData });
-
-      // After successful registration, go to dashboard
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -133,226 +96,228 @@ const Register = () => {
     }
   };
 
-  // ── Render ───────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-red-50 py-10 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-lg mx-auto">
+    // ── Full screen split layout ───────────────────────────
+    <div className="min-h-screen flex p-10 bg-gray-500">
 
-        {/* ── Header ── */}
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🩸</div>
-          <h1 className="text-3xl font-bold text-red-600">LifeLink</h1>
-          <p className="text-gray-500 mt-1">Create your account</p>
+      {/* ── LEFT SIDE: Video (fixed — stays while form scrolls) ── */}
+<div className="hidden md:flex md:w-2/5 relative overflow-hidden sticky top-10 h-[90vh] rounded-3xl">
+        {/* Same video as login page — consistent branding */}
+        <video
+          src={signinVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Text content */}
+        <div className="relative z-10 flex flex-col justify-end p-10 text-white">
+          <h2 className="text-3xl font-black mb-3 leading-tight">
+            Be Someone's <br/>
+            <span style={{ color: '#E8353B' }}>Lifesaver</span>
+          </h2>
+          <p className="text-white/80 text-sm leading-relaxed mb-6">
+            Register today and be ready to donate blood when
+            someone nearby needs you most.
+          </p>
+
+          {/* Steps preview */}
+          <div className="space-y-3">
+            {[
+              { num: '1', text: 'Create your account'        },
+              { num: '2', text: 'Add your health profile'    },
+              { num: '3', text: 'Get notified & save lives'  },
+            ].map(({ num, text }) => (
+              <div key={num} className="flex items-center gap-3">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center
+                             text-white text-xs font-black flex-shrink-0"
+                  style={{ backgroundColor: '#C0171D' }}
+                >
+                  {num}
+                </div>
+                <p className="text-white/80 text-sm">{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* ── Error Banner ── */}
-        {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">
-            ⚠️ {error}
-          </div>
-        )}
+      {/* ── RIGHT SIDE: Register Form (scrollable) ────────── */}
+      <div className="w-full md:w-3/5 overflow-y-auto bg-gray-850">
+        <div className="min-h-full flex items-start justify-center py-10 px-6">
+          <div className="w-full max-w-lg">
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-
-          {/* ════════════════════════════════
-              SECTION 1 — Basic Information
-          ════════════════════════════════ */}
-          <div className="border-b border-gray-100 pb-5">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-              Basic Information
-            </h2>
-
-            <div className="space-y-3">
-
-              {/* Full Name */}
-              <input
-                name="name"
-                placeholder="Full Name"
-                required
-                autoComplete="name"
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                           focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-              />
-
-              {/* Email */}
-              <input
-                name="email"
-                type="email"
-                placeholder="Email Address"
-                required
-                autoComplete="email"
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                           focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-              />
-
-              {/* Password with Eye Toggle */}
-              <div className="relative">
-                <input
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password (min 6 characters)"
-                  required
-                  autoComplete="new-password"
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12
-                             focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-                />
-                {/* Eye toggle — type="button" stops it from submitting the form */}
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2
-                             text-gray-400 hover:text-red-500 transition-colors focus:outline-none"
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-
-              {/* Phone */}
-              <input
-                name="phone"
-                placeholder="Phone Number (e.g. 0771234567)"
-                required
-                autoComplete="tel"
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                           focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-              />
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="text-4xl mb-2">🩸</div>
+              <h1 className="text-3xl font-bold text-red-600">LifeLink</h1>
+              <p className="text-gray-500 mt-1">Create your account</p>
             </div>
-          </div>
 
-          {/* ════════════════════════════════
-              SECTION 2 — Health Profile
-              Collected at signup so donors
-              are ready to help immediately
-          ════════════════════════════════ */}
-          <div>
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
-              Health Profile
-            </h2>
-            <p className="text-xs text-gray-400 mb-4">
-              This helps us match you instantly if someone nearby needs your blood type.
-            </p>
-
-            <div className="space-y-3">
-
-              {/* Blood Type Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Blood Type
-                </label>
-                <select
-                  onChange={(e) => setDonorData({ ...donorData, bloodType: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-                >
-                  {BLOOD_TYPES.map(bt => <option key={bt} value={bt}>{bt}</option>)}
-                </select>
+            {/* Error Banner */}
+            {error && (
+              <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">
+                ⚠️ {error}
               </div>
+            )}
 
-              {/* District Dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  District
-                </label>
-                <select
-                  name="district"
-                  onChange={handleLocationChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white
-                             focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-                >
-                  {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
 
-              {/* City — optional */}
-              <input
-                name="city"
-                placeholder="City / Town (optional)"
-                onChange={handleLocationChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                           focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-              />
+              {/* ── SECTION 1: Basic Information ── */}
+              <div className="bg-white rounded-2xl shadow p-6">
+                <h2 className="text-xs font-semibold text-gray-400
+                               uppercase tracking-widest mb-4">
+                  Basic Information
+                </h2>
+                <div className="space-y-3">
 
-              {/* Age & Weight — side by side */}
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <input
-                    name="age"
-                    type="number"
-                    placeholder="Age"
-                    required
-                    min="18"
-                    max="65"
-                    onChange={handleDonorChange}
+                  <input name="name" placeholder="Full Name" required
+                    autoComplete="name" onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                               focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-                  />
-                  {/* Hint below the field */}
-                  <p className="text-xs text-gray-400 mt-1">Must be 18–65</p>
-                </div>
-                <div className="flex-1">
-                  <input
-                    name="weight"
-                    type="number"
-                    placeholder="Weight (kg)"
-                    required
-                    min="50"
-                    onChange={handleDonorChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                               focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">Minimum 50kg</p>
-                </div>
-              </div>
+                               focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
 
-              {/* Health Flag Checkboxes */}
-              <div className="bg-red-50 rounded-xl p-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  ⚠️ Check any that currently apply to you:
-                </p>
-                {HEALTH_FLAGS.map(([flag, icon, label]) => (
-                  <label
-                    key={flag}
-                    className="flex items-center gap-3 py-1.5 cursor-pointer group"
-                  >
+                  <input name="email" type="email" placeholder="Email Address" required
+                    autoComplete="email" onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                               focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
+
+                  {/* Password with eye toggle */}
+                  <div className="relative">
                     <input
-                      type="checkbox"
-                      checked={donorData.healthFlags[flag]}
-                      onChange={() => handleHealthFlag(flag)}
-                      className="w-4 h-4 accent-red-600 cursor-pointer"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Password (min 6 characters)"
+                      required autoComplete="new-password" onChange={handleChange}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12
+                                 focus:outline-none focus:ring-2 focus:ring-red-400 transition"
                     />
-                    <span className="text-sm text-gray-700 group-hover:text-red-700 transition">
-                      {icon} {label}
-                    </span>
-                  </label>
-                ))}
+                    <button type="button" tabIndex={-1}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2
+                                 text-gray-400 hover:text-red-500 transition-colors">
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+
+                  <input name="phone" placeholder="Phone Number (e.g. 0771234567)"
+                    required autoComplete="tel" onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                               focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
+                </div>
               </div>
-            </div>
+
+              {/* ── SECTION 2: Health Profile ── */}
+              <div className="bg-white rounded-2xl shadow p-6">
+                <h2 className="text-xs font-semibold text-gray-400
+                               uppercase tracking-widest mb-1">
+                  Health Profile
+                </h2>
+                <p className="text-xs text-gray-400 mb-4">
+                  Helps us match you instantly when someone needs your blood type.
+                </p>
+
+                <div className="space-y-4">
+
+                  {/* Blood Type */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Blood Type
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {BLOOD_TYPES.map(bt => (
+                        <button key={bt} type="button"
+                          onClick={() => setDonorData({ ...donorData, bloodType: bt })}
+                          className={`py-2 rounded-xl font-bold border-2 transition text-sm
+                            ${donorData.bloodType === bt
+                              ? 'text-white border-transparent'
+                              : 'border-gray-200 text-gray-600 hover:border-red-300'}`}
+                          style={donorData.bloodType === bt
+                            ? { backgroundColor: '#C0171D' } : {}}>
+                          {bt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* District */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                      District
+                    </label>
+                    <select name="district" onChange={handleLocationChange}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                                 bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                      {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+
+                  {/* City */}
+                  <input name="city" placeholder="City / Town (optional)"
+                    onChange={handleLocationChange}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                               focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
+
+                  {/* Age & Weight */}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <input name="age" type="number" placeholder="Age"
+                        required min="18" max="65" onChange={handleDonorChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                                   focus:outline-none focus:ring-2 focus:ring-red-400" />
+                      <p className="text-xs text-gray-400 mt-1">Must be 18–65</p>
+                    </div>
+                    <div className="flex-1">
+                      <input name="weight" type="number" placeholder="Weight (kg)"
+                        required min="50" onChange={handleDonorChange}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                                   focus:outline-none focus:ring-2 focus:ring-red-400" />
+                      <p className="text-xs text-gray-400 mt-1">Minimum 50kg</p>
+                    </div>
+                  </div>
+
+                  {/* Health Flags */}
+                  <div className="bg-red-50 rounded-xl p-4">
+                    <p className="text-sm font-medium text-gray-700 mb-3">
+                      ⚠️ Check any that currently apply to you:
+                    </p>
+                    {HEALTH_FLAGS.map(([flag, icon, label]) => (
+                      <label key={flag}
+                        className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                        <input type="checkbox"
+                          checked={donorData.healthFlags[flag]}
+                          onChange={() => handleHealthFlag(flag)}
+                          className="w-4 h-4 accent-red-600 cursor-pointer" />
+                        <span className="text-sm text-gray-700
+                                         group-hover:text-red-700 transition">
+                          {icon} {label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button type="submit" disabled={loading}
+                className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold
+                           hover:bg-red-700 transition disabled:opacity-50
+                           disabled:cursor-not-allowed">
+                {loading ? 'Creating account...' : 'Create Account '}
+              </button>
+            </form>
+
+            {/* Login Link */}
+            <p className="text-center text-sm text-gray-500 mt-6">
+              Already have an account?{' '}
+              <Link to="/login" className="text-red-100 font-medium hover:underline">
+                Sign in
+              </Link>
+            </p>
           </div>
-
-          {/* ── Submit Button ── */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold
-                       hover:bg-red-700 transition disabled:opacity-50
-                       disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating account...' : 'Create Account 🩸'}
-          </button>
-        </form>
-
-        {/* ── Login Link ── */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{' '}
-          <Link to="/login" className="text-red-600 font-medium hover:underline">
-            Sign in
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import signinVideo from '../assets/signin.mp4';
 
-//  Eye Icons (SVG) 
-// Using SVG instead of emoji for clean, professional look
+// ── Eye Icons ─────────────────────────────────────────────────
 const EyeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none"
     viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -29,31 +29,26 @@ const EyeOffIcon = () => (
 );
 
 const Login = () => {
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+  const { login }  = useAuth();
+  const navigate   = useNavigate();
 
-  //  State 
   const [formData,     setFormData]     = useState({ email: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false); // toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [error,        setError]        = useState('');
   const [loading,      setLoading]      = useState(false);
 
-  // Update form state on every keystroke
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // prevent browser page reload
+    e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login(formData);
-      // Everyone goes to the same dashboard — no role separation
       navigate('/dashboard');
     } catch (err) {
-      // Show the error message from backend, or a default message
       setError(err.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setLoading(false);
@@ -61,94 +56,124 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-red-50 flex items-center justify-center px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+    // ── Full screen split layout ───────────────────────────
+    <div className="min-h-screen flex p-8 bg-gray-500">
 
-        {/* ── Header ── */}
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🩸</div>
-          <h1 className="text-3xl font-bold text-red-600">LifeLink</h1>
-          <p className="text-gray-500 mt-1">Sign in to your account</p>
+      {/* ── LEFT SIDE: Video ─────────────────────────────── */}
+      {/* Hidden on mobile, visible on medium screens and above */}
+<div className="hidden md:flex md:w-2/5 relative overflow-hidden sticky top-10 h-[90vh] rounded-3xl">
+        {/* Background video — autoplay, loop, muted (required for autoplay) */}
+        <video
+          src={signinVideo}
+          autoPlay      // starts playing automatically
+          loop          // replays when finished
+          muted         // required for autoplay to work in browsers
+          playsInline   // important for mobile browsers
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Text content on top of video */}
+        <div className="relative z-10 flex flex-col justify-end p-10 text-white">
+          <h2 className="text-4xl font-black mb-3 leading-tight">
+            Every Drop <br/>
+            <span style={{ color: '#ac151c' }}>Saves Lives</span>
+          </h2>
+          <p className="text-white/80 text-base leading-relaxed mb-6">
+            Join thousands of donors across Sri Lanka who are
+            ready to help in emergencies instantly.
+          </p>
         </div>
+      </div>
 
-        {/* ── Error Message ── */}
-        {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">
-            ⚠️ {error}
-          </div>
-        )}
+      {/* ── RIGHT SIDE: Login Form ────────────────────────── */}
+      <div className="w-full md:w-1/2 flex items-center justify-center
+                      px-6 py-12 bg-gray-250">
+        <div className="w-full max-w-md bg-gray-300 p-8 rounded-lg shadow-lg">
 
-        {/* ── Form ── */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-              placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                         focus:outline-none focus:ring-2 focus:ring-red-400 transition"
-            />
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-2">🩸</div>
+            <h1 className="text-3xl font-bold text-red-600">LifeLink</h1>
+            <p className="text-gray-700 mt-2">Sign in to your account</p>
           </div>
 
-          {/* Password Field with Eye Toggle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              {/* type switches between 'password' (dots) and 'text' (visible) */}
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4 text-sm">
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1">
+                Email
+              </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
                 required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
                            focus:outline-none focus:ring-2 focus:ring-red-400 transition"
               />
-              {/* Eye button — toggles showPassword state */}
-              <button
-                type="button" // important: prevents form submission
-                tabIndex={-1} // skip in tab order — user doesn't need to tab to this
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2
-                           text-gray-400 hover:text-red-500 transition-colors focus:outline-none"
-              >
-                {/* Show closed eye when password is visible, open eye when hidden */}
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold
-                       hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            {/* Password with Eye Toggle */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12
+                             focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2
+                             text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+            </div>
 
-        {/* ── Register Link ── */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-red-600 font-medium hover:underline">
-            Register here
-          </Link>
-        </p>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold
+                         hover:bg-red-700 transition disabled:opacity-50
+                         disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          {/* Register Link */}
+          <p className="text-center text-sm text-gray-800 mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-red-600 font-medium hover:underline">
+              Register here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
