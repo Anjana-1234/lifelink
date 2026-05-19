@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import API_URL from '../services/api';
+import { useAuth }             from '../context/AuthContext';
+import axios                   from 'axios';
+import toast                   from 'react-hot-toast';
+import API_URL                 from '../services/api';
 
+// ── Constants ─────────────────────────────────────────────────
 const DISTRICTS = [
   'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale',
   'Nuwara Eliya', 'Galle', 'Matara', 'Hambantota', 'Jaffna',
@@ -12,17 +13,18 @@ const DISTRICTS = [
   'Polonnaruwa', 'Badulla', 'Monaragala', 'Ratnapura', 'Kegalle'
 ];
 
-const BLOOD_TYPES  = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const HEALTH_FLAGS = [
-  ['hasFever',          '🤒', 'Currently have fever or flu'],
-  ['onAntibiotics',     '💊', 'Currently on antibiotics'],
-  ['recentSurgery',     '🏥', 'Had surgery in the last 6 months'],
-  ['recentTattoo',      '🖊️', 'Got a tattoo or piercing in last 6 months'],
-  ['isPregnant',        '🤰', 'Currently pregnant or breastfeeding'],
-  ['hasChronicDisease', '❤️‍🩹', 'Have a chronic disease (HIV, Hepatitis, etc.)'],
+  ['hasFever','Currently have fever or flu'],
+  ['onAntibiotics','Currently on antibiotics'],
+  ['recentSurgery', 'Had surgery in the last 6 months'],
+  ['recentTattoo', 'Got a tattoo or piercing in last 6 months'],
+  ['isPregnant', 'Currently pregnant or breastfeeding'],
+  ['hasChronicDisease', 'Have a chronic disease (HIV, Hepatitis, Diabetes, etc.)'],
 ];
 
+// Get user initials for avatar
 const getInitials = (name) => {
   if (!name) return '?';
   const parts = name.trim().split(' ');
@@ -33,23 +35,33 @@ const getInitials = (name) => {
 const Profile = () => {
   const { token, user } = useAuth();
 
+  // ── State ─────────────────────────────────────────────────
   const [loading,      setLoading]      = useState(true);
   const [saving,       setSaving]       = useState(false);
   const [activeTab,    setActiveTab]    = useState('personal');
   const [donorProfile, setDonorProfile] = useState(null);
 
-  const [personalForm, setPersonalForm] = useState({ name: '', phone: '', email: '' });
+  // Personal info — includes sex
+  const [personalForm, setPersonalForm] = useState({
+    name:  '',
+    phone: '',
+    email: '',
+    sex:   ''  // 'male' or 'female'
+  });
 
+  // Health profile
   const [healthForm, setHealthForm] = useState({
     bloodType: 'A+',
     location:  { district: 'Colombo', city: '' },
-    age: '', weight: '',
+    age:       '',
+    weight:    '',
     healthFlags: {
       hasFever: false, onAntibiotics: false, recentSurgery: false,
       recentTattoo: false, isPregnant: false, hasChronicDisease: false,
     }
   });
 
+  // ── Load data on mount ────────────────────────────────────
   useEffect(() => { fetchProfileData(); }, []);
 
   const fetchProfileData = async () => {
@@ -65,10 +77,12 @@ const Profile = () => {
       const userData  = userRes.data.user;
       const donorData = donorRes.data.donor;
 
+      // Populate personal form including sex
       setPersonalForm({
         name:  userData.name  || '',
         phone: userData.phone || '',
         email: userData.email || '',
+        sex:   userData.sex   || ''
       });
 
       if (donorData) {
@@ -98,12 +112,12 @@ const Profile = () => {
     try {
       await axios.put(
         `${API_URL}/api/auth/update`,
-        { name: personalForm.name, phone: personalForm.phone },
+        { name: personalForm.name, phone: personalForm.phone, sex: personalForm.sex },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Personal info updated successfully! ');
+      toast.success('Personal info updated successfully! ✅');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update personal info');
+      toast.error(err.response?.data?.message || 'Failed to update');
     } finally {
       setSaving(false);
     }
@@ -119,7 +133,7 @@ const Profile = () => {
         healthForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Health profile updated! 🩸');
+      toast.success('Health profile updated! ');
       fetchProfileData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update health profile');
@@ -135,6 +149,12 @@ const Profile = () => {
     });
   };
 
+  // Hide pregnant option for males
+  const visibleFlags = HEALTH_FLAGS.filter(([flag]) => {
+    if (flag === 'isPregnant' && personalForm.sex === 'male') return false;
+    return true;
+  });
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="text-center text-gray-400">
@@ -147,92 +167,171 @@ const Profile = () => {
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
 
-      {/* Header with Avatar */}
-      <div className="rounded-2xl p-6 mb-6 text-white flex items-center gap-5"
-        style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}>
-        <div className="w-20 h-20 rounded-full flex items-center justify-center
-                       text-3xl font-black flex-shrink-0 border-4 border-white/30"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+      {/* ── Header with Avatar ── */}
+      <div
+        className="rounded-2xl p-6 mb-6 text-white flex items-center gap-5"
+        style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}
+      >
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center
+                     text-3xl font-black flex-shrink-0 border-4 border-white/30"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+        >
           {getInitials(user?.name)}
         </div>
         <div>
           <h1 className="text-2xl font-bold">{user?.name}</h1>
           <p className="text-white/70 text-sm mt-0.5">{user?.email}</p>
+
+          {/* Sex badge */}
+          {personalForm.sex && (
+            <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs
+                             font-medium bg-white/20 text-white">
+              {personalForm.sex === 'male' ? '♂ Male' : '♀ Female'}
+            </span>
+          )}
+
+          {/* Eligibility badge */}
           {donorProfile && (
-            <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium"
+            <span
+              className="inline-block mt-2 ml-2 px-3 py-1 rounded-full text-xs font-medium"
               style={{
                 backgroundColor: donorProfile.isEligible
                   ? 'rgba(21,128,61,0.3)' : 'rgba(192,23,29,0.3)',
                 border: `1px solid ${donorProfile.isEligible ? '#86EFAC' : '#FCA5A5'}`
-              }}>
-              {donorProfile.isEligible ? '✅ Eligible to donate' : '⏸️ Not eligible currently'}
+              }}
+            >
+              {donorProfile.isEligible ? '✅ Eligible to donate' : '⏸️ Not eligible'}
             </span>
           )}
         </div>
       </div>
 
-      {/* Tab Switcher */}
+      {/* ── Tab Switcher ── */}
       <div className="flex gap-2 mb-6 bg-white rounded-xl shadow p-1 w-fit">
         {[
           { key: 'personal', label: ' Personal Info'  },
           { key: 'health',   label: ' Health Profile' },
         ].map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition
               ${activeTab === tab.key ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
-            style={activeTab === tab.key ? { backgroundColor: '#C0171D' } : {}}>
+            style={activeTab === tab.key ? { backgroundColor: '#C0171D' } : {}}
+          >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* ── TAB 1: PERSONAL INFO ── */}
+      {/* ════════════════════════════════════════
+          TAB 1: PERSONAL INFO
+      ════════════════════════════════════════ */}
       {activeTab === 'personal' && (
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="font-semibold text-gray-700 mb-5">Personal Information</h2>
+
           <form onSubmit={handleSavePersonal} className="space-y-4">
+
+            {/* Full Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
-              <input value={personalForm.name}
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Full Name
+              </label>
+              <input
+                value={personalForm.name}
                 onChange={e => setPersonalForm({ ...personalForm, name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                           focus:outline-none transition"
                 onFocus={e => e.target.style.borderColor = '#C0171D'}
-                onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
+                onBlur={e  => e.target.style.borderColor = '#D1D5DB'}
+              />
             </div>
+
+            {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Phone Number</label>
-              <input value={personalForm.phone}
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Phone Number
+              </label>
+              <input
+                value={personalForm.phone}
                 onChange={e => setPersonalForm({ ...personalForm, phone: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                           focus:outline-none transition"
                 onFocus={e => e.target.style.borderColor = '#C0171D'}
-                onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
+                onBlur={e  => e.target.style.borderColor = '#D1D5DB'}
+              />
             </div>
+
+            {/* Email — read only */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Email Address
                 <span className="text-gray-400 font-normal ml-1">(cannot be changed)</span>
               </label>
-              <input value={personalForm.email} disabled
+              <input
+                value={personalForm.email}
+                disabled
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5
-                           bg-gray-50 text-gray-400 cursor-not-allowed" />
+                           bg-gray-50 text-gray-400 cursor-not-allowed"
+              />
             </div>
-            <button type="submit" disabled={saving}
+
+            {/* ── Sex Selection ── */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                Sex
+              </label>
+              <div className="flex gap-3">
+                {[
+                  { value: 'male',   label: ' Male' },
+                  { value: 'female', label: ' Female' },
+                ].map(({ value, label, icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPersonalForm({ ...personalForm, sex: value })}
+                    className={`flex-1 flex items-center justify-center gap-2
+                                py-2.5 rounded-xl border-2 font-medium text-sm transition
+                      ${personalForm.sex === value
+                        ? 'text-white border-transparent'
+                        : 'border-gray-300 text-gray-600 hover:border-red-400'
+                      }`}
+                    style={personalForm.sex === value
+                      ? { backgroundColor: '#C0171D' } : {}}
+                  >
+                    <span>{icon}</span>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <button
+              type="submit"
+              disabled={saving}
               className="w-full py-2.5 rounded-xl text-white font-semibold
                          transition disabled:opacity-50"
-              style={{ backgroundColor: '#C0171D' }}>
+              style={{ backgroundColor: '#C0171D' }}
+            >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
         </div>
       )}
 
-      {/* ── TAB 2: HEALTH PROFILE ── */}
+      {/* ════════════════════════════════════════
+          TAB 2: HEALTH PROFILE
+      ════════════════════════════════════════ */}
       {activeTab === 'health' && (
         <div className="bg-white rounded-2xl shadow p-6">
           <h2 className="font-semibold text-gray-700 mb-1">Health Profile</h2>
           <p className="text-xs text-gray-400 mb-5">
             Keep this updated so we can match you accurately in emergencies.
           </p>
+
           <form onSubmit={handleSaveHealth} className="space-y-5">
 
             {/* Blood Type */}
@@ -256,12 +355,15 @@ const Profile = () => {
             {/* District */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">District</label>
-              <select value={healthForm.location?.district}
+              <select
+                value={healthForm.location?.district}
                 onChange={e => setHealthForm({
                   ...healthForm,
                   location: { ...healthForm.location, district: e.target.value }
                 })}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white">
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                           bg-white focus:outline-none transition"
+              >
                 {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
@@ -271,15 +373,18 @@ const Profile = () => {
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 City / Town <span className="text-gray-400">(optional)</span>
               </label>
-              <input value={healthForm.location?.city || ''}
+              <input
+                value={healthForm.location?.city || ''}
                 onChange={e => setHealthForm({
                   ...healthForm,
                   location: { ...healthForm.location, city: e.target.value }
                 })}
                 placeholder="e.g. Colombo 07"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                           focus:outline-none transition"
                 onFocus={e => e.target.style.borderColor = '#C0171D'}
-                onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
+                onBlur={e  => e.target.style.borderColor = '#D1D5DB'}
+              />
             </div>
 
             {/* Age & Weight */}
@@ -288,7 +393,8 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-600 mb-1">Age</label>
                 <input type="number" value={healthForm.age} min="18" max="65"
                   onChange={e => setHealthForm({ ...healthForm, age: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                             focus:outline-none transition"
                   onFocus={e => e.target.style.borderColor = '#C0171D'}
                   onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
                 <p className="text-xs text-gray-400 mt-1">Must be 18–65</p>
@@ -297,19 +403,20 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-600 mb-1">Weight (kg)</label>
                 <input type="number" value={healthForm.weight} min="50"
                   onChange={e => setHealthForm({ ...healthForm, weight: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                             focus:outline-none transition"
                   onFocus={e => e.target.style.borderColor = '#C0171D'}
                   onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
                 <p className="text-xs text-gray-400 mt-1">Minimum 50kg</p>
               </div>
             </div>
 
-            {/* Health Flags */}
+            {/* Health Flags — pregnant hidden for males */}
             <div className="bg-red-50 rounded-xl p-4">
               <p className="text-sm font-medium text-gray-700 mb-3">
-                ⚠️ Check any that currently apply to you:
+                🩸 Check any that currently apply to you:
               </p>
-              {HEALTH_FLAGS.map(([flag, icon, label]) => (
+              {visibleFlags.map(([flag, icon, label]) => (
                 <label key={flag}
                   className="flex items-center gap-3 py-1.5 cursor-pointer group">
                   <input type="checkbox"
@@ -325,11 +432,13 @@ const Profile = () => {
 
             {/* Eligibility Status */}
             {donorProfile && (
-              <div className="rounded-xl p-4"
+              <div
+                className="rounded-xl p-4"
                 style={{
                   backgroundColor: donorProfile.isEligible ? '#DCFCE7' : '#FEE2E2',
                   borderLeft: `4px solid ${donorProfile.isEligible ? '#15803D' : '#C0171D'}`
-                }}>
+                }}
+              >
                 <p className="font-semibold text-sm"
                   style={{ color: donorProfile.isEligible ? '#15803D' : '#C0171D' }}>
                   {donorProfile.isEligible
@@ -349,11 +458,12 @@ const Profile = () => {
               </div>
             )}
 
+            {/* Save Button */}
             <button type="submit" disabled={saving}
               className="w-full py-2.5 rounded-xl text-white font-semibold
                          transition disabled:opacity-50"
               style={{ backgroundColor: '#C0171D' }}>
-              {saving ? 'Saving...' : 'Update Health Profile '}
+              {saving ? 'Saving...' : 'Update Health Profile'}
             </button>
           </form>
         </div>

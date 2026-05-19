@@ -1,19 +1,14 @@
 const express = require('express');
-const router = express.Router();
-
-// Import controller functions
-const { register, login, getMe } = require('../controllers/authController');
-
-// Import the protect middleware
+const router  = express.Router();
 const protect = require('../middleware/auth');
+const { register, login, getMe, updateProfile } = require('../controllers/authController');
 
-// @route POST /api/auth/register
+// Public routes
 router.post('/register', register);
+router.post('/login',    login);
 
-// @route POST /api/auth/login
-router.post('/login', login);
-
-// @route GET /api/auth/me  (Protected — needs token)
-router.get('/me', protect, getMe);
+// Private routes
+router.get('/me',       protect, getMe);
+router.put('/update',   protect, updateProfile); // ← uses updateProfile now
 
 module.exports = router;
