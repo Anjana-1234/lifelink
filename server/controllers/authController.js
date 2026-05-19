@@ -10,8 +10,7 @@ const { checkEligibility } = require('../utils/eligibility');
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, donorDetails } = req.body;
-
+    const { name, email, password, phone, sex, donorDetails } = req.body;
     // Check if email is already taken
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -27,7 +26,8 @@ const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      phone
+      phone,
+      sex: sex || undefined
     });
 
     // Save donor health profile if provided
@@ -106,7 +106,7 @@ const login = async (req, res) => {
 
     // Generate a fresh token on every login
     const token = jwt.sign(
-      { id: user._id },              //  NO role — removed from user model
+      { id: user._id },              
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -119,7 +119,6 @@ const login = async (req, res) => {
         name:  user.name,
         email: user.email,
         phone: user.phone
-        //  NO role field
       }
     });
 
