@@ -40,12 +40,12 @@ const DISTRICTS = [
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const HEALTH_FLAGS = [
-  ['hasFever',          '🤒', 'Currently have fever or flu'],
-  ['onAntibiotics',     '💊', 'Currently on antibiotics'],
-  ['recentSurgery',     '🏥', 'Had surgery in the last 6 months'],
-  ['recentTattoo',      '🖊️', 'Got a tattoo or piercing in last 6 months'],
-  ['isPregnant',        '🤰', 'Currently pregnant or breastfeeding'],
-  ['hasChronicDisease', '❤️‍🩹', 'Have a chronic disease (HIV, Hepatitis, Diabetes, etc.)'],
+  ['hasFever', 'Currently have fever or flu'],
+  ['onAntibiotics', 'Currently on antibiotics'],
+  ['recentSurgery', 'Had surgery in the last 6 months'],
+  ['recentTattoo', 'Got a tattoo or piercing in last 6 months'],
+  ['isPregnant', 'Currently pregnant or breastfeeding'],
+  ['hasChronicDisease', 'Have a chronic disease (HIV, Hepatitis, Diabetes, etc.)'],
 ];
 
 const Register = () => {
@@ -56,15 +56,16 @@ const Register = () => {
   const [error,        setError]        = useState('');
   const [loading,      setLoading]      = useState(false);
 
+  // Basic info — added sex field
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', phone: ''
+    name: '', email: '', password: '', phone: '',
+    sex: ''  // 'male' or 'female'
   });
 
   const [donorData, setDonorData] = useState({
     bloodType: 'A+',
     location:  { district: 'Colombo', city: '' },
-    age:       '',
-    weight:    '',
+    age: '', weight: '',
     healthFlags: {
       hasFever: false, onAntibiotics: false, recentSurgery: false,
       recentTattoo: false, isPregnant: false, hasChronicDisease: false,
@@ -82,9 +83,22 @@ const Register = () => {
     healthFlags: { ...donorData.healthFlags, [flag]: !donorData.healthFlags[flag] }
   });
 
+  // Auto-hide pregnant option for males
+  const visibleFlags = HEALTH_FLAGS.filter(([flag]) => {
+    if (flag === 'isPregnant' && formData.sex === 'male') return false;
+    return true;
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate sex selection
+    if (!formData.sex) {
+      setError('Please select your sex.');
+      return;
+    }
+
     setLoading(true);
     try {
       await register({ ...formData, donorDetails: donorData });
@@ -97,22 +111,16 @@ const Register = () => {
   };
 
   return (
-    // ── Full screen split layout ───────────────────────────
     <div className="min-h-screen flex p-10 bg-gray-500">
 
-      {/* ── LEFT SIDE: Video (fixed — stays while form scrolls) ── */}
-<div className="hidden md:flex md:w-2/5 relative overflow-hidden sticky top-10 h-[90vh] rounded-3xl">
-        {/* Same video as login page — consistent branding */}
+      {/* ── LEFT SIDE: Video ── */}
+      <div className="hidden md:flex md:w-2/5 relative overflow-hidden
+                      sticky top-10 h-[90vh] rounded-3xl">
         <video
           src={signinVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
+          autoPlay loop muted playsInline
           className="absolute inset-0 w-full h-full object-cover"
         />
-
-        {/* Text content */}
         <div className="relative z-10 flex flex-col justify-end p-10 text-white">
           <h2 className="text-3xl font-black mb-3 leading-tight">
             Be Someone's <br/>
@@ -122,13 +130,11 @@ const Register = () => {
             Register today and be ready to donate blood when
             someone nearby needs you most.
           </p>
-
-          {/* Steps preview */}
           <div className="space-y-3">
             {[
-              { num: '1', text: 'Create your account'        },
-              { num: '2', text: 'Add your health profile'    },
-              { num: '3', text: 'Get notified & save lives'  },
+              { num: '1', text: 'Create your account'       },
+              { num: '2', text: 'Add your health profile'   },
+              { num: '3', text: 'Get notified & save lives' },
             ].map(({ num, text }) => (
               <div key={num} className="flex items-center gap-3">
                 <div
@@ -145,16 +151,17 @@ const Register = () => {
         </div>
       </div>
 
-      {/* ── RIGHT SIDE: Register Form (scrollable) ────────── */}
-      <div className="w-full md:w-3/5 overflow-y-auto bg-gray-850">
-        <div className="min-h-full flex items-start justify-center py-10 px-6">
-          <div className="w-full max-w-lg">
+      {/* ── RIGHT SIDE: Form ── */}
+      {/* bg-gray-300 matches login form card color exactly */}
+      <div className="w-full md:w-3/5 overflow-y-auto">
+        <div className="min-h-full flex items-start justify-center py-8 px-6">
+          <div className="w-full max-w-lg bg-gray-300 rounded-2xl shadow-lg p-8">
 
-            {/* Header */}
+            {/* Header — same as Login */}
             <div className="text-center mb-8">
               <div className="text-4xl mb-2">🩸</div>
               <h1 className="text-3xl font-bold text-red-600">LifeLink</h1>
-              <p className="text-gray-500 mt-1">Create your account</p>
+              <p className="text-gray-700 mt-1">Create your account</p>
             </div>
 
             {/* Error Banner */}
@@ -167,31 +174,36 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
 
               {/* ── SECTION 1: Basic Information ── */}
-              <div className="bg-white rounded-2xl shadow p-6">
-                <h2 className="text-xs font-semibold text-gray-400
-                               uppercase tracking-widest mb-4">
+              <div>
+                <h2 className="text-medium font-semibold text-gray-800
+                               uppercase tracking-widest mb-3">
                   Basic Information
                 </h2>
                 <div className="space-y-3">
 
+                  {/* Full Name */}
                   <input name="name" placeholder="Full Name" required
                     autoComplete="name" onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                    className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                               bg-white text-gray-800 placeholder-gray-400
                                focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
 
-                  <input name="email" type="email" placeholder="Email Address" required
-                    autoComplete="email" onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                  {/* Email */}
+                  <input name="email" type="email" placeholder="Email Address"
+                    required autoComplete="email" onChange={handleChange}
+                    className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                               bg-white text-gray-800 placeholder-gray-400
                                focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
 
-                  {/* Password with eye toggle */}
+                  {/* Password */}
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Password (min 6 characters)"
                       required autoComplete="new-password" onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12
+                      className="w-full border border-gray-400 rounded-lg px-4 py-2.5 pr-12
+                                 bg-white text-gray-800 placeholder-gray-400
                                  focus:outline-none focus:ring-2 focus:ring-red-400 transition"
                     />
                     <button type="button" tabIndex={-1}
@@ -202,20 +214,62 @@ const Register = () => {
                     </button>
                   </div>
 
+                  {/* Phone */}
                   <input name="phone" placeholder="Phone Number (e.g. 0771234567)"
                     required autoComplete="tel" onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                    className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                               bg-white text-gray-800 placeholder-gray-400
                                focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
+
+                  {/* ── Sex Selection ── */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Sex
+                    </label>
+                    <div className="flex gap-3">
+                      {[
+                        { value: 'male',   label: ' Male' },
+                        { value: 'female', label: ' Female'},
+                      ].map(({ value, label, icon }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, sex: value })}
+                          className={`flex-1 flex items-center justify-center gap-2
+                                      py-2.5 rounded-xl border-2 font-medium text-sm
+                                      transition
+                            ${formData.sex === value
+                              ? 'text-white border-transparent'
+                              : 'border-gray-400 bg-white text-gray-700 hover:border-red-400'
+                            }`}
+                          style={formData.sex === value
+                            ? { backgroundColor: '#ac151c' } : {}}
+                        >
+                          <span>{icon}</span>
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Validation hint */}
+                    {!formData.sex && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Please select your sex
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Divider */}
+              <div className="border-t border-gray-400" />
+
               {/* ── SECTION 2: Health Profile ── */}
-              <div className="bg-white rounded-2xl shadow p-6">
-                <h2 className="text-xs font-semibold text-gray-400
+              <div>
+                <h2 className="text-medium font-semibold text-gray-800
                                uppercase tracking-widest mb-1">
                   Health Profile
                 </h2>
-                <p className="text-xs text-gray-400 mb-4">
+                <p className="text-xs text-gray-600 mb-4">
                   Helps us match you instantly when someone needs your blood type.
                 </p>
 
@@ -223,7 +277,7 @@ const Register = () => {
 
                   {/* Blood Type */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Blood Type
                     </label>
                     <div className="grid grid-cols-4 gap-2">
@@ -233,9 +287,9 @@ const Register = () => {
                           className={`py-2 rounded-xl font-bold border-2 transition text-sm
                             ${donorData.bloodType === bt
                               ? 'text-white border-transparent'
-                              : 'border-gray-200 text-gray-600 hover:border-red-300'}`}
+                              : 'border-gray-400 bg-white text-gray-700 hover:border-red-400'}`}
                           style={donorData.bloodType === bt
-                            ? { backgroundColor: '#C0171D' } : {}}>
+                            ? { backgroundColor: '#ac151c' } : {}}>
                           {bt}
                         </button>
                       ))}
@@ -244,12 +298,13 @@ const Register = () => {
 
                   {/* District */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       District
                     </label>
                     <select name="district" onChange={handleLocationChange}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                                 bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                      className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                                 bg-white text-gray-800 focus:outline-none
+                                 focus:ring-2 focus:ring-red-400">
                       {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
@@ -257,7 +312,8 @@ const Register = () => {
                   {/* City */}
                   <input name="city" placeholder="City / Town (optional)"
                     onChange={handleLocationChange}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                    className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                               bg-white text-gray-800 placeholder-gray-400
                                focus:outline-none focus:ring-2 focus:ring-red-400 transition" />
 
                   {/* Age & Weight */}
@@ -265,25 +321,28 @@ const Register = () => {
                     <div className="flex-1">
                       <input name="age" type="number" placeholder="Age"
                         required min="18" max="65" onChange={handleDonorChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                        className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                                   bg-white text-gray-800 placeholder-gray-400
                                    focus:outline-none focus:ring-2 focus:ring-red-400" />
-                      <p className="text-xs text-gray-400 mt-1">Must be 18–65</p>
+                      <p className="text-xs text-gray-600 mt-1">Must be 18–65</p>
                     </div>
                     <div className="flex-1">
                       <input name="weight" type="number" placeholder="Weight (kg)"
                         required min="50" onChange={handleDonorChange}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5
+                        className="w-full border border-gray-400 rounded-lg px-4 py-2.5
+                                   bg-white text-gray-800 placeholder-gray-400
                                    focus:outline-none focus:ring-2 focus:ring-red-400" />
-                      <p className="text-xs text-gray-400 mt-1">Minimum 50kg</p>
+                      <p className="text-xs text-gray-600 mt-1">Minimum 50kg</p>
                     </div>
                   </div>
 
                   {/* Health Flags */}
-                  <div className="bg-red-50 rounded-xl p-4">
+                  <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                     <p className="text-sm font-medium text-gray-700 mb-3">
-                      ⚠️ Check any that currently apply to you:
+                      🩸 Check any that currently apply to you:
                     </p>
-                    {HEALTH_FLAGS.map(([flag, icon, label]) => (
+                    {/* visibleFlags hides "pregnant" for males automatically */}
+                    {visibleFlags.map(([flag, icon, label]) => (
                       <label key={flag}
                         className="flex items-center gap-3 py-1.5 cursor-pointer group">
                         <input type="checkbox"
@@ -300,19 +359,19 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Submit */}
+              {/* Submit — same style as Login */}
               <button type="submit" disabled={loading}
-                className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold
+                className="w-full bg-red-600 text-white py-2.5 rounded-lg font-semibold
                            hover:bg-red-700 transition disabled:opacity-50
                            disabled:cursor-not-allowed">
                 {loading ? 'Creating account...' : 'Create Account '}
               </button>
             </form>
 
-            {/* Login Link */}
-            <p className="text-center text-sm text-gray-500 mt-6">
+            {/* Login Link — clearly visible on gray-300 */}
+            <p className="text-center text-sm text-gray-800 mt-6">
               Already have an account?{' '}
-              <Link to="/login" className="text-red-100 font-medium hover:underline">
+              <Link to="/login" className="text-red-600 font-medium hover:underline">
                 Sign in
               </Link>
             </p>
