@@ -309,7 +309,7 @@ const Dashboard = () => {
               onClick={() => navigate('/donor-guide')}
               className="ml-4 flex-shrink-0 px-5 py-2 rounded-lg text-white
                         text-sm font-semibold transition hover:opacity-90"
-              style={{ backgroundColor: '#4b4848' }}
+              style={{ backgroundColor: '#0e113d' }}
             >
               Read Guide →
             </button>
