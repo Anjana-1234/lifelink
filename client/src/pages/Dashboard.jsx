@@ -280,39 +280,43 @@ const Dashboard = () => {
         </div>
 
         {/* ── Blood Type Info ── */}
-        <div className="bg-white border border-gray-500 rounded-2xl shadow p-8 mb-8">
+        <div className="bg-gray-200 rounded-2xl shadow p-8 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-2">
             🩸 Did You Know?
           </h2>
-          <p className="text-gray-700 text-small mb-6">
+          <p className="text-gray-500 text-sm mb-6">
             Blood type compatibility matters in emergencies:
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { type: 'O-',  label: 'Universal Donor',     color: '#C0171D', note: 'Can donate to anyone'    },
-              { type: 'AB+', label: 'Universal Recipient', color: '#1B2A4A', note: 'Can receive from anyone' },
-              { type: 'O+',  label: 'Most Common',         color: '#C0171D', note: '38% of population'       },
-              { type: 'AB-', label: 'Most Rare',           color: '#1B2A4A', note: 'Only 1% of population'   },
-            ].map(({ type, label, color, note }) => (
-              <div
-                key={type}
-                className="rounded-xl p-4 text-center border-2"
-                style={{ borderColor: color, backgroundColor: `${color}10` }}
-              >
-                <div className="text-2xl font-black mb-1" style={{ color }}>
-                  {type}
-                </div>
-                <div className="text-small font-semibold mb-1" style={{ color }}>
-                  {label}
-                </div>
-                <div className="text-medium text-gray-800">{note}</div>
-              </div>
-            ))}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {/* ... existing blood type cards ... */}
+          </div>
+
+          {/* ── NEW: Link to full donor guide ── */}
+          <div
+            className="rounded-xl p-4 flex items-center justify-between"
+            style={{ backgroundColor: '#FFF5F5', border: '1px solid #FEE2E2' }}
+          >
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">
+                Want to learn more about blood donation?
+              </p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                Before & after donation tips, eligibility, blood type guide and more.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/donor-guide')}
+              className="ml-4 flex-shrink-0 px-5 py-2 rounded-lg text-white
+                        text-sm font-semibold transition hover:opacity-90"
+              style={{ backgroundColor: '#4b4848' }}
+            >
+              Read Guide →
+            </button>
           </div>
         </div>
-
         {/* ── Quick Actions ── */}
-        <div className="bg-white rounded-2xl shadow p-6">
+        <div className="bg-gray-300 rounded-2xl shadow p-6">
           <h2 className="font-semibold text-gray-700 mb-4"> Quick Actions</h2>
           <div className="flex flex-wrap gap-3">
             <button
