@@ -1,81 +1,82 @@
 const nodemailer = require('nodemailer');
 
-// ── Email Transporter Setup ───────────────────────────────────
-// nodemailer uses LifeLink's own Gmail to send emails
-// FROM: alertslifelink@gmail.com (our app's fixed email)
-// TO:   any donor's personal email  (stored in DB from registration)
-//
-// Users NEVER need to provide any password or credentials
-// They just register with their normal email — we send TO them
-// Use port 587 instead of default — works better on Railway
-const transporter = nodemailer.createTransport({
-  host:   'smtp.gmail.com',
-  port:   587,
-  secure: false, // true for 465, false for 587
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  // Required for Railway — forces IPv4 instead of IPv6
-  family: 4
-});
+// ── Transporter ───────────────────────────────────────────────
+// Uses Gmail SMTP with explicit IPv4 forced
+// family: 4 forces IPv4 — fixes ENETUNREACH on Railway
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host:   'smtp.gmail.com',
+    port:   465,          // changed from 587 to 465
+    secure: true,         // true for port 465
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false  // helps with Railway SSL issues
+    },
+    socketTimeout: 10000,        // 10 second timeout
+    connectionTimeout: 10000,
+    dnsTimeout: 10000,
+    logger: false,
+    debug:  false
+  });
+};
 
-// ─────────────────────────────────────────────────────────────
-// Verify email config works on server startup
-// Good practice — tells us immediately if email is broken
-// ─────────────────────────────────────────────────────────────
+// ── Verify email config ───────────────────────────────────────
 const verifyEmailConfig = async () => {
   try {
+    const transporter = createTransporter();
     await transporter.verify();
     console.log('✅ Email service ready');
     return true;
   } catch (error) {
+    // Don't crash server if email fails — just log it
     console.error('❌ Email config error:', error.message);
     return false;
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// Send blood request notification email to a matching donor
-//
-// Called from requestController when a blood request is posted
-// Sends a beautiful HTML email matching LifeLink brand colors
-// ─────────────────────────────────────────────────────────────
+// ── Send donor notification email ─────────────────────────────
 const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
-
-  // Skip if no email address found for this donor
   if (!donorEmail) {
     console.log('⚠️  No email for donor, skipping...');
     return false;
   }
 
   try {
+    // Create fresh transporter for each email
+    // Avoids stale connection issues on Railway
+    const transporter = createTransporter();
+
     const { bloodType, hospital, location, urgency } = request;
 
-    // Urgency emoji — makes subject line stand out in inbox
     const urgencyEmoji = {
       Critical: '🚨',
       Urgent:   '⚠️',
       Normal:   '💙'
     }[urgency] || '🩸';
 
+    const appUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
     await transporter.sendMail({
-      from:    `"LifeLink " <${process.env.EMAIL_USER}>`,
+      from:    `"LifeLink Blood Network" <${process.env.EMAIL_USER}>`,
       to:      donorEmail,
-      subject: `${urgencyEmoji} ${urgency} — ${bloodType} blood needed in ${location.district}`,
+      subject: `${urgencyEmoji} ${urgency} - ${bloodType} blood needed in ${location?.district}`,
 
       html: `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="utf-8"/>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
           <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
             body {
               font-family: Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              margin: 0;
-              padding: 0;
               background-color: #f3f4f6;
+              color: #333;
+              line-height: 1.6;
             }
             .container {
               max-width: 560px;
@@ -90,103 +91,148 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
               text-align: center;
               color: white;
             }
+            .header h1 {
+              font-size: 26px;
+              font-weight: bold;
+              margin-bottom: 6px;
+            }
+            .header p {
+              color: rgba(255,255,255,0.75);
+              font-size: 12px;
+              letter-spacing: 2px;
+            }
             .content {
               background: white;
-              padding: 30px;
+              padding: 32px;
+            }
+            .greeting {
+              font-size: 20px;
+              font-weight: bold;
+              color: #1B2A4A;
+              margin-bottom: 12px;
+            }
+            .intro {
+              color: #4B5563;
+              font-size: 15px;
+              margin-bottom: 24px;
             }
             .request-box {
               background: #FFF5F5;
               border-left: 4px solid #C0171D;
               border-radius: 8px;
-              padding: 16px;
-              margin: 20px 0;
+              padding: 20px;
+              margin-bottom: 28px;
             }
-            .button {
+            .request-box .urgency-label {
+              font-weight: bold;
+              color: #C0171D;
+              font-size: 14px;
+              margin-bottom: 14px;
+            }
+            .request-box .detail-row {
+              display: flex;
+              gap: 8px;
+              margin-bottom: 8px;
+              font-size: 14px;
+              color: #374151;
+            }
+            .request-box .label {
+              font-weight: bold;
+              min-width: 90px;
+            }
+            .cta-wrapper {
+              text-align: center;
+              margin: 28px 0;
+            }
+            .cta-button {
               display: inline-block;
               background: #C0171D;
               color: white;
-              padding: 14px 36px;
+              padding: 14px 40px;
               text-decoration: none;
               border-radius: 10px;
               font-weight: bold;
               font-size: 15px;
             }
+            .note {
+              color: #9CA3AF;
+              font-size: 12px;
+              text-align: center;
+              margin-top: 8px;
+            }
+            .sign-off {
+              margin-top: 28px;
+              color: #4B5563;
+              font-size: 14px;
+            }
             .footer {
               background: #1B2A4A;
               padding: 16px;
               text-align: center;
+            }
+            .footer p {
               color: rgba(255,255,255,0.4);
               font-size: 11px;
+              margin: 4px 0;
             }
           </style>
         </head>
         <body>
           <div class="container">
 
-            <!-- Header -->
             <div class="header">
-              <h1 style="margin:0; font-size:26px; font-weight:bold;"> LifeLink</h1>
-              <p style="margin:6px 0 0; color:rgba(255,255,255,0.75); font-size:13px;">
-                FIND. CONNECT. SAVE LIVES.
-              </p>
+              <h1>LifeLink</h1>
+              <p>FIND. CONNECT. SAVE LIVES.</p>
             </div>
 
-            <!-- Body -->
             <div class="content">
-              <h2 style="color:#1B2A4A;">Hi ${donorName}! </h2>
+              <p class="greeting">Hi ${donorName}! </p>
 
-              <p>
+              <p class="intro">
                 Someone in your district urgently needs
                 <strong style="color:#C0171D;">${bloodType}</strong> blood.
-                Your blood type is a match — <strong>you could save a life today!</strong>
+                Your blood type matches — <strong>you could save a life today!</strong>
               </p>
 
-              <!-- Request Details -->
               <div class="request-box">
-                <p style="margin:0 0 10px; font-weight:bold; color:#C0171D; font-size:14px;">
-                  ${urgencyEmoji} ${urgency} Blood Request
-                </p>
-                <p style="margin:4px 0; color:#374151; font-size:14px;">
-                   <strong>Blood Type:</strong> ${bloodType}
-                </p>
-                <p style="margin:4px 0; color:#374151; font-size:14px;">
-                   <strong>Hospital:</strong> ${hospital}
-                </p>
-                <p style="margin:4px 0; color:#374151; font-size:14px;">
-                   <strong>Location:</strong>
-                  ${location.city
+                <p class="urgency-label">${urgencyEmoji} ${urgency} Blood Request</p>
+                <div class="detail-row">
+                  <span class="label"> Blood Type:</span>
+                  <span>${bloodType}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label"> Hospital:</span>
+                  <span>${hospital}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="label"> Location:</span>
+                  <span>${location?.city
                     ? `${location.city}, ${location.district}`
-                    : location.district}
-                </p>
+                    : location?.district}</span>
+                </div>
               </div>
 
-              <!-- CTA Button -->
-              <div style="text-align:center; margin:30px 0;">
-                
-                  href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/browse"
-                  class="button"
-                >
-                  View Request &amp; Respond 
+              <div class="cta-wrapper">
+                <a href="${appUrl}/browse" class="cta-button">
+                  View Request &amp; Respond 🩸
                 </a>
+                <p class="note">Opens in LifeLink app</p>
               </div>
 
-              <p style="color:#6B7280; font-size:13px; text-align:center;">
-                You received this because your blood type matches this urgent request.<br/>
+              <p class="note" style="margin-top: 16px;">
+                You received this because your blood type matches this urgent request.
                 Every blood donation can save up to 3 lives. ❤️
               </p>
 
-              <p style="margin-top:24px;">
+              <div class="sign-off">
                 Best regards,<br/>
                 <strong>The LifeLink Team</strong>
-              </p>
+              </div>
             </div>
 
-            <!-- Footer -->
             <div class="footer">
-              <p style="margin:0;">© 2026 LifeLink — Find. Connect. Save Lives.</p>
-              <p style="margin:6px 0 0;">
-                This is an automated message. Please do not reply to this email.
-              </p>
+              <p>© 2026 LifeLink — Find. Connect. Save Lives.</p>
+              <p>This is an automated message. Please do not reply.</p>
             </div>
 
           </div>
@@ -199,8 +245,6 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
     return true;
 
   } catch (error) {
-    // Don't crash the app if email fails
-    // Just log the error and continue
     console.error(`❌ Email failed for ${donorEmail}:`, error.message);
     return false;
   }
