@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Global Mobile Fixes ── */
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Make tables scroll on mobile */
+table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Touch targets minimum 44px for mobile */
+button, a {
+  min-height: 36px;
+}
+
+/* Fix input zoom on iOS */
+input, select, textarea {
+  font-size: 16px !important;
+}
