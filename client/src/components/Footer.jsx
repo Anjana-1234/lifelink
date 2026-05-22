@@ -2,16 +2,16 @@ import { useNavigate } from 'react-router-dom';
 import logo            from '../assets/logo.png';
 
 const Footer = () => {
-  // ── useNavigate must be inside a Router context ───────────
-  // This works because Footer is inside Layout which is inside BrowserRouter
   const navigate = useNavigate();
   const year     = new Date().getFullYear();
 
-  // Safe navigation handler — prevents errors if navigate fails
+  // ── Safe navigation wrapper ───────────────────────────────
+  // Prevents "navigate is not defined" crash
   const handleNav = (path) => {
     try {
       navigate(path);
-    } catch (err) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
       window.location.href = path;
     }
   };
@@ -23,32 +23,32 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
-          {/* ── Column 1: Logo + Tagline ── */}
+          {/* Column 1: Logo */}
           <div>
             <img src={logo} alt="LifeLink" className="h-16 w-auto mb-4" />
-            <p className="text-gray-300 text-sm leading-relaxed mb-3">
+            <p className="text-gray-400 text-sm leading-relaxed mb-3">
               LifeLink connects donors instantly - matching blood donors
               with patients in emergencies across Sri Lanka.
             </p>
             <p className="text-sm font-bold tracking-widest uppercase"
-              style={{ color: '#eeabae' }}>
+              style={{ color: '#e4aeb0' }}>
               Find. Connect. Save Lives.
             </p>
           </div>
 
-          {/* ── Column 2: Quick Links ── */}
+          {/* Column 2: Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-5 text-small uppercase tracking-wider">
+            <h3 className="text-white font-semibold mb-5 text-medium uppercase tracking-wider">
               Quick Links
             </h3>
             <ul className="space-y-2.5">
               {[
-                { label: 'Home',              path: '/dashboard'      },
-                { label: 'Browse Requests',   path: '/browse'         },
-                { label: 'Request Blood',     path: '/request-blood'  },
-                { label: 'My Activity',       path: '/my-activity'    },
-                { label: 'My Profile',        path: '/profile'        },
-                { label: 'Blood Donor Guide', path: '/donor-guide'    },
+                { label: 'Home',              path: '/dashboard'     },
+                { label: 'Browse Requests',   path: '/browse'        },
+                { label: 'Request Blood',     path: '/request-blood' },
+                { label: 'My Activity',       path: '/my-activity'   },
+                { label: 'My Profile',        path: '/profile'       },
+                { label: 'Blood Donor Guide', path: '/donor-guide'   },
               ].map(({ label, path }) => (
                 <li key={path}>
                   <button
@@ -63,16 +63,18 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* ── Column 3: Contact ── */}
+          {/* Column 3: Contact */}
           <div>
-            <h3 className="text-white font-semibold mb-5 text-sm uppercase tracking-wider">
+            <h3 className="text-white font-semibold mb-5 text-medium uppercase tracking-wider">
               Contact Us
             </h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <span className="text-lg">✉️</span>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">Email</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">
+                    Email
+                  </p>
                   <a href="mailto:lifelink.alerts@gmail.com"
                     className="text-gray-300 text-sm hover:text-white transition">
                     lifelink.alerts@gmail.com
@@ -82,7 +84,9 @@ const Footer = () => {
               <li className="flex items-start gap-3">
                 <span className="text-lg">📞</span>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">Phone</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">
+                    Phone
+                  </p>
                   <a href="tel:+94711439792"
                     className="text-gray-300 text-sm hover:text-white transition">
                     0711 439 792
@@ -92,7 +96,9 @@ const Footer = () => {
               <li className="flex items-start gap-3">
                 <span className="text-lg">📍</span>
                 <div>
-                  <p className="text-gray-500 text-xs uppercase tracking-wide mb-0.5">Location</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wide mb-0.5">
+                    Location
+                  </p>
                   <p className="text-gray-300 text-sm">Sri Lanka</p>
                 </div>
               </li>
@@ -102,11 +108,9 @@ const Footer = () => {
       </div>
 
       {/* ── Bottom Bar ── */}
-      <div className="border-t px-6 py-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col items-center justify-center gap-3">
-          <div className="flex flex-wrap justify-center gap-1.5">
-            
-          </div>
+      <div className="border-t px-6 py-4"
+        style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col items-center gap-3">
           <p className="text-gray-500 text-xs text-center">
             © {year} LifeLink. All rights reserved. Built with ❤️ to save lives.
           </p>
