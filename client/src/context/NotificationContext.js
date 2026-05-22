@@ -1,22 +1,25 @@
-import { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import axios      from 'axios';
-import { useAuth } from './AuthContext';
-import API_URL    from '../services/api';
+import { createContext, useState, useContext,
+         useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
+import { io } from 'socket.io-client';
+import { useAuth }  from './AuthContext';
+import API_URL from '../services/api';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [loading,       setLoading]       = useState(false);
 
-  // ── Fetch notifications ───────────────────────────────────
-  // useCallback prevents infinite re-render loops
+  // Keep socket reference across renders
+  const socketRef = useRef(null);
+
+  // ── Fetch notifications from backend ──────────────────────
   const fetchNotifications = useCallback(async () => {
     if (!token) return;
-
     setLoading(true);
     try {
       const res = await axios.get(
@@ -32,12 +35,59 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [token]);
 
-  // ── Poll every 30 seconds for new notifications ───────────
-  // Simple polling instead of WebSockets — works well for this project
+  // ── Setup Socket.io connection ────────────────────────────
+  useEffect(() => {
+    if (!token || !user) return;
+
+    // Connect to backend socket
+    const socket = io(API_URL, {
+      transports: ['websocket', 'polling'],
+      withCredentials: true
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('🔌 Socket connected');
+      // Register user with their ID so server can find them
+      socket.emit('register', user.id);
+    });
+
+    // Listen for real-time notifications from server
+    socket.on('new_notification', (notification) => {
+      console.log('🔔 Real-time notification received!');
+
+      // Add to top of notifications list
+      setNotifications(prev => [notification, ...prev]);
+
+      // Increase unread count
+      setUnreadCount(prev => prev + 1);
+
+      // Optional: browser notification sound
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.play().catch(() => {}); // ignore if autoplay blocked
+      } catch {}
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+    });
+
+    // Cleanup on logout or unmount
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [token, user]);
+
+  // ── Initial fetch on login ────────────────────────────────
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval); // cleanup on unmount
   }, [fetchNotifications]);
 
   // ── Mark ALL as read ──────────────────────────────────────
