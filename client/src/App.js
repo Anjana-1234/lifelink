@@ -1,78 +1,83 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { useAuth }       from './context/AuthContext';
+import ErrorBoundary     from './components/ErrorBoundary';
 
 // ── Pages ─────────────────────────────────────────────────────
-import Login        from './pages/Login';
-import Register     from './pages/Register';
-import Dashboard    from './pages/Dashboard';
-import Browse       from './pages/Browse';
-import RequestBlood from './pages/RequestBlood';
-import MyActivity   from './pages/MyActivity';
+import Login         from './pages/Login';
+import Register      from './pages/Register';
+import Dashboard     from './pages/Dashboard';
+import Browse        from './pages/Browse';
+import RequestBlood  from './pages/RequestBlood';
+import MyActivity    from './pages/MyActivity';
 import RequestDetail from './pages/RequestDetail';
-import Profile from './pages/Profile';
-import DonorGuide from './pages/DonorGuide';
+import Profile       from './pages/Profile';
+import DonorGuide    from './pages/DonorGuide';
 
 // ── Layout ────────────────────────────────────────────────────
 import Layout from './components/Layout';
 
-// ── Route Guards ──────────────────────────────────────────────
-
-// PublicRoute: if already logged in, redirect to dashboard
-// Prevents logged-in users from seeing login/register pages
+// ── PublicRoute ───────────────────────────────────────────────
+// If already logged in → redirect to dashboard
+// Stops logged-in users seeing login/register pages
 const PublicRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? <Navigate to="/dashboard" /> : children;
 };
 
-// PrivateRoute: if NOT logged in, redirect to login
-// Protects pages that require authentication
+// ── PrivateRoute ──────────────────────────────────────────────
+// If NOT logged in → redirect to login
+// Wraps page with Layout (Navbar + Footer)
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
   return token
-    ? <Layout>{children}</Layout>  // wrap with navbar layout
+    ? <Layout>{children}</Layout>
     : <Navigate to="/login" />;
 };
 
+// ── App ───────────────────────────────────────────────────────
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      {/* ErrorBoundary inside BrowserRouter so navigate works in error page */}
+      <ErrorBoundary>
+        <Routes>
 
-        {/* ── Public Routes (no navbar) ── */}
-        <Route path="/login" element={
-          <PublicRoute><Login /></PublicRoute>
-        } />
-        <Route path="/register" element={
-          <PublicRoute><Register /></PublicRoute>
-        } />
+          {/* ── Public Routes (no navbar) ── */}
+          <Route path="/login" element={
+            <PublicRoute><Login /></PublicRoute>
+          } />
+          <Route path="/register" element={
+            <PublicRoute><Register /></PublicRoute>
+          } />
 
-        {/* ── Private Routes (with navbar via Layout) ── */}
-        <Route path="/dashboard" element={
-          <PrivateRoute><Dashboard /></PrivateRoute>
-        } />
-        <Route path="/browse" element={
-          <PrivateRoute><Browse /></PrivateRoute>
-        } />
-        <Route path="/request-blood" element={
-          <PrivateRoute><RequestBlood /></PrivateRoute>
-        } />
-        <Route path="/my-activity" element={
-          <PrivateRoute><MyActivity /></PrivateRoute>
-        } />
-        <Route path="/request/:id" element={
-          <PrivateRoute><RequestDetail /></PrivateRoute>
-        } />
-        <Route path="/profile" element={
-          <PrivateRoute><Profile /></PrivateRoute>
-        } />
-        <Route path="/donor-guide" element={
-          <PrivateRoute><DonorGuide /></PrivateRoute>
-        } />
+          {/* ── Private Routes (with Navbar + Footer via Layout) ── */}
+          <Route path="/dashboard" element={
+            <PrivateRoute><Dashboard /></PrivateRoute>
+          } />
+          <Route path="/browse" element={
+            <PrivateRoute><Browse /></PrivateRoute>
+          } />
+          <Route path="/request-blood" element={
+            <PrivateRoute><RequestBlood /></PrivateRoute>
+          } />
+          <Route path="/my-activity" element={
+            <PrivateRoute><MyActivity /></PrivateRoute>
+          } />
+          <Route path="/request/:id" element={
+            <PrivateRoute><RequestDetail /></PrivateRoute>
+          } />
+          <Route path="/profile" element={
+            <PrivateRoute><Profile /></PrivateRoute>
+          } />
+          <Route path="/donor-guide" element={
+            <PrivateRoute><DonorGuide /></PrivateRoute>
+          } />
 
-        {/* ── Default ── */}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+          {/* ── Default redirect ── */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
 
-      </Routes>
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

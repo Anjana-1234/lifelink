@@ -1,8 +1,7 @@
 import { createContext, useState, useContext,
-         useEffect, useCallback, useRef } from 'react';
+         useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
-import { useAuth }  from './AuthContext';
+import { useAuth } from './AuthContext';
 import API_URL from '../services/api';
 
 const NotificationContext = createContext();
@@ -14,10 +13,7 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount,   setUnreadCount]   = useState(0);
   const [loading,       setLoading]       = useState(false);
 
-  // Keep socket reference across renders
-  const socketRef = useRef(null);
-
-  // ── Fetch notifications from backend ──────────────────────
+  // ── Fetch notifications ───────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -35,62 +31,73 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [token]);
 
-  // ── Setup Socket.io connection ────────────────────────────
+  // ── Try Socket.io, fallback to polling ────────────────────
   useEffect(() => {
     if (!token || !user) return;
 
-    // Connect to backend socket
-    const socket = io(API_URL, {
-      transports: ['websocket', 'polling'],
-      withCredentials: true
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      console.log('🔌 Socket connected');
-      // Register user with their ID so server can find them
-      socket.emit('register', user.id);
-    });
-
-    // Listen for real-time notifications from server
-    socket.on('new_notification', (notification) => {
-      console.log('🔔 Real-time notification received!');
-
-      // Add to top of notifications list
-      setNotifications(prev => [notification, ...prev]);
-
-      // Increase unread count
-      setUnreadCount(prev => prev + 1);
-
-      // Optional: browser notification sound
-      try {
-        const audio = new Audio('/notification.mp3');
-        audio.play().catch(() => {}); // ignore if autoplay blocked
-      } catch {}
-    });
-
-    socket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
-    });
-
-    socket.on('connect_error', (err) => {
-      console.error('Socket connection error:', err.message);
-    });
-
-    // Cleanup on logout or unmount
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [token, user]);
-
-  // ── Initial fetch on login ────────────────────────────────
-  useEffect(() => {
+    // First fetch immediately
     fetchNotifications();
-  }, [fetchNotifications]);
 
-  // ── Mark ALL as read ──────────────────────────────────────
+    // Try to connect socket
+    let socket = null;
+    let pollInterval = null;
+
+    const connectSocket = async () => {
+      try {
+        // Dynamic import — won't crash if not installed
+        const { io } = await import('socket.io-client');
+
+        socket = io(API_URL, {
+          transports:      ['polling', 'websocket'],
+          withCredentials: true,
+          timeout:         5000,
+          reconnection:    true,
+          reconnectionAttempts: 3
+        });
+
+        socket.on('connect', () => {
+          console.log('🔌 Socket connected');
+          socket.emit('register', user.id);
+          // Cancel polling if socket works
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        });
+
+        socket.on('new_notification', (notification) => {
+          console.log(' Real-time notification!');
+          setNotifications(prev => [notification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+        });
+
+        socket.on('connect_error', (err) => {
+          console.log('Socket failed, using polling:', err.message);
+          // Start polling as fallback
+          if (!pollInterval) {
+            pollInterval = setInterval(fetchNotifications, 30000);
+          }
+        });
+
+      } catch (err) {
+        // socket.io-client not installed — use polling
+        console.log('Socket not available, using 30s polling');
+        pollInterval = setInterval(fetchNotifications, 30000);
+      }
+    };
+
+    connectSocket();
+
+    // Cleanup
+    return () => {
+      if (socket)       socket.disconnect();
+      if (pollInterval) clearInterval(pollInterval);
+    };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user?.id]);
+
+  // ── Mark ALL read ─────────────────────────────────────────
   const markAllRead = async () => {
     if (!token || unreadCount === 0) return;
     try {
@@ -106,7 +113,7 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  // ── Mark ONE as read ──────────────────────────────────────
+  // ── Mark ONE read ─────────────────────────────────────────
   const markOneRead = async (id) => {
     if (!token) return;
     try {
