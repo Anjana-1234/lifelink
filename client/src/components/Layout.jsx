@@ -34,7 +34,8 @@ const Layout = ({ children }) => {
       <Navbar />
 
       {/* Page content — flex-1 fills remaining space */}
-      <main className="flex-1">
+      {/* pt-16 pushes content below the fixed navbar (navbar height = 64px = h-16) */}
+      <main className="flex-1 pt-16">
         {children}
       </main>
 

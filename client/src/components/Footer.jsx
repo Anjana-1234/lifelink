@@ -41,7 +41,7 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-5 text-medium uppercase tracking-wider">
               Quick Links
             </h3>
-            <ul className="space-y-2.5">
+            <ul className="space-y-0.25">
               {[
                 { label: 'Home',              path: '/dashboard'     },
                 { label: 'Browse Requests',   path: '/browse'        },
