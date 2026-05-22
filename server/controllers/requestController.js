@@ -241,7 +241,7 @@ const getMyRequests = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // @route   GET /api/requests/:id
-// @desc    Get a single request by ID
+// @desc    Get single request — phone hidden unless donor accepted
 // @access  Private
 // ─────────────────────────────────────────────────────────────
 const getRequestById = async (req, res) => {
@@ -254,16 +254,45 @@ const getRequestById = async (req, res) => {
       return res.status(404).json({ message: 'Request not found' });
     }
 
-    res.json({ success: true, request });
+    // ── Phone privacy logic ───────────────────────────────────
+    // Check if current user is the requester
+    const isOwner = request.requesterId._id.toString() === req.user.id;
+
+    // Check if current user is a donor who accepted
+    const myDonorProfile = await Donor.findOne({ userId: req.user.id });
+    const myResponse     = myDonorProfile
+      ? request.respondents.find(
+          r => r.donorId?._id?.toString() === myDonorProfile._id.toString()
+            || r.donorId?.toString()       === myDonorProfile._id.toString()
+        )
+      : null;
+
+    const hasAccepted = myResponse?.status === 'accepted';
+
+    // ── Build safe request object ─────────────────────────────
+    // Clone request and hide phone if user shouldn't see it
+    const requestObj = request.toObject();
+
+    if (!isOwner && !hasAccepted) {
+      // Hide phone — replace with null so frontend knows to show lock
+      requestObj.requesterId = {
+        ...requestObj.requesterId,
+        phone: null  // hidden
+      };
+    }
+
+    // ── Add helper flags for frontend ─────────────────────────
+    requestObj.isOwner    = isOwner;
+    requestObj.hasAccepted = hasAccepted;
+    requestObj.canSeePhone = isOwner || hasAccepted;
+
+    res.json({ success: true, request: requestObj });
 
   } catch (error) {
     console.error('Get request by id error:', error.message);
-
-    // Handle invalid MongoDB ID format
     if (error.kind === 'ObjectId') {
       return res.status(404).json({ message: 'Request not found — invalid ID' });
     }
-
     res.status(500).json({ message: 'Server error' });
   }
 };

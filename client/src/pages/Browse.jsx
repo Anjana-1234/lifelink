@@ -77,8 +77,8 @@ useEffect(() => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (action === 'accept') {
-        toast.success(res.data.message);
-      } else {
+        toast.success('Accepted! Open the request to see contact details.');
+        } else {
         toast('You declined this request');
       }
       fetchRequests();
