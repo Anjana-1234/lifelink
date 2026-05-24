@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -21,18 +21,18 @@ const URGENCY_CONFIG = {
   Normal:   { color: '#15803D', bg: '#DCFCE7', label: '🟢 Normal'   },
 };
 
-// Format date to "2 hours ago" etc.
 const timeAgo = (dateString) => {
   const diffMins = Math.floor((new Date() - new Date(dateString)) / 60000);
-  if (diffMins < 1)   return 'Just now';
-  if (diffMins < 60)  return `${diffMins}m ago`;
+  if (diffMins < 1)  return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
   const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24)   return `${diffHrs}h ago`;
+  if (diffHrs < 24)  return `${diffHrs}h ago`;
   return `${Math.floor(diffHrs / 24)}d ago`;
 };
 
 const Browse = () => {
-  const { token } = useAuth(); 
+  const { token } = useAuth();
+  const navigate  = useNavigate(); 
 
   const [requests,   setRequests]   = useState([]);
   const [loading,    setLoading]    = useState(true);
@@ -43,10 +43,10 @@ const Browse = () => {
     district:  'All',
   });
 
-  /// eslint-disable-next-line react-hooks/exhaustive-deps
-useEffect(() => {
-  fetchRequests();
-}, [filters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchRequests();
+  }, [filters]);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -71,14 +71,14 @@ useEffect(() => {
   const handleRespond = async (requestId, action) => {
     setResponding(requestId);
     try {
-      const res = await axios.put(
+      await axios.put(
         `${API_URL}/api/requests/${requestId}/respond`,
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (action === 'accept') {
-        toast.success('Accepted! Open the request to see contact details.');
-        } else {
+        toast.success('Accepted! Open the request to see contact details. 🩸');
+      } else {
         toast('You declined this request');
       }
       fetchRequests();
@@ -95,7 +95,9 @@ useEffect(() => {
       {/* ── Page Header ── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Browse Blood Requests</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Browse Blood Requests
+          </h1>
           <p className="text-gray-500 text-sm mt-1">
             {requests.length} open request(s) found
           </p>
@@ -209,7 +211,9 @@ useEffect(() => {
                   {/* Request Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-bold text-gray-800">{request.hospital}</h3>
+                      <h3 className="font-bold text-gray-800">
+                        {request.hospital}
+                      </h3>
                       <span
                         className="text-xs px-2 py-0.5 rounded-full font-medium"
                         style={{ backgroundColor: urgency.bg, color: urgency.color }}
@@ -226,7 +230,9 @@ useEffect(() => {
                       <span>🩸 {request.unitsNeeded} unit(s) needed</span>
                       <span>👤 {request.requesterId?.name}</span>
                       <span>🕐 {timeAgo(request.createdAt)}</span>
-                      <span>👥 {request.respondents?.length || 0} donor(s) responded</span>
+                      <span>
+                        👥 {request.respondents?.length || 0} donor(s) responded
+                      </span>
                     </div>
                   </div>
 
@@ -248,7 +254,7 @@ useEffect(() => {
                                    font-medium transition disabled:opacity-50"
                         style={{ backgroundColor: '#C0171D' }}
                       >
-                        {responding === request._id ? '...' : 'Accept '}
+                        {responding === request._id ? '...' : 'Accept 🩸'}
                       </button>
                     )}
                     {isOwner && (

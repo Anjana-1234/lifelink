@@ -262,7 +262,7 @@ const RequestDetail = () => {
             <div>
               <h1 className="text-2xl font-bold">{request.hospital}</h1>
               <p className="text-white/80 mt-1">
-                📍 {request.location?.city
+                 {request.location?.city
                   ? `${request.location.city}, ` : ''}
                 {request.location?.district}
               </p>
