@@ -59,13 +59,13 @@ const Layout = ({ children }) => {
           style={{
             backgroundColor: '#FEF3C7',
             borderBottom:    '1px solid #FDE68A',
-            marginTop:       '64px' // below fixed navbar
+            marginTop:       '98px' // below fixed navbar
           }}
         >
           <div className="flex items-center gap-2">
             <span className="text-xl">📧</span>
             <p className="text-sm text-yellow-800">
-              <strong>Please verify your email</strong> —
+              <strong>Please verify your email</strong> -
               check your inbox for a verification link.
             </p>
           </div>

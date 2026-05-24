@@ -168,43 +168,54 @@ const Profile = () => {
     <div className="max-w-3xl mx-auto py-10 px-4">
 
       {/* ── Header with Avatar ── */}
-      <div
-        className="rounded-2xl p-6 mb-6 text-white flex items-center gap-5"
-        style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}
-      >
-        <div
-          className="w-20 h-20 rounded-full flex items-center justify-center
-                     text-3xl font-black flex-shrink-0 border-4 border-white/30"
-          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
-        >
-          {getInitials(user?.name)}
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">{user?.name}</h1>
-          <p className="text-white/70 text-sm mt-0.5">{user?.email}</p>
+      {/* After user name and email, add verified badge */}
+      <div className="flex flex-wrap gap-2 mt-2">
 
-          {/* Sex badge */}
-          {personalForm.sex && (
-            <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs
-                             font-medium bg-white/20 text-white">
-              {personalForm.sex === 'male' ? '♂ Male' : '♀ Female'}
-            </span>
-          )}
+        {/* Sex badge */}
+        {personalForm.sex && (
+          <span className="px-3 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+            {personalForm.sex === 'male' ? '♂ Male' : '♀ Female'}
+          </span>
+        )}
 
-          {/* Eligibility badge */}
-          {donorProfile && (
-            <span
-              className="inline-block mt-2 ml-2 px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                backgroundColor: donorProfile.isEligible
-                  ? 'rgba(21,128,61,0.3)' : 'rgba(192,23,29,0.3)',
-                border: `1px solid ${donorProfile.isEligible ? '#86EFAC' : '#FCA5A5'}`
-              }}
-            >
-              {donorProfile.isEligible ? '✅ Eligible to donate' : '⏸️ Not eligible'}
-            </span>
-          )}
-        </div>
+        {/* Email verification badge */}
+        {user?.isEmailVerified ? (
+          <span
+            className="px-3 py-0.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: 'rgba(21,128,61,0.3)',
+              border: '1px solid #86EFAC',
+              color: 'white'
+            }}
+          >
+            ✅ Email Verified
+          </span>
+        ) : (
+          <span
+            className="px-3 py-0.5 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: 'rgba(180,83,9,0.3)',
+              border: '1px solid #FDE68A',
+              color: 'white'
+            }}
+          >
+            ⚠️ Email Not Verified
+          </span>
+        )}
+
+        {/* Donor eligibility badge */}
+        {donorProfile && (
+          <span
+            className="px-3 py-1 rounded-full text-xs font-medium"
+            style={{
+              backgroundColor: donorProfile.isEligible
+                ? 'rgba(21,128,61,0.3)' : 'rgba(192,23,29,0.3)',
+              border: `1px solid ${donorProfile.isEligible ? '#86EFAC' : '#FCA5A5'}`
+            }}
+          >
+            {donorProfile.isEligible ? '✅ Eligible to donate' : '⏸️ Not eligible'}
+          </span>
+        )}
       </div>
 
       {/* ── Tab Switcher ── */}
