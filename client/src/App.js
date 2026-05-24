@@ -12,6 +12,7 @@ import MyActivity    from './pages/MyActivity';
 import RequestDetail from './pages/RequestDetail';
 import Profile       from './pages/Profile';
 import DonorGuide    from './pages/DonorGuide';
+import EmailVerified from './pages/EmailVerified';
 
 // ── Layout ────────────────────────────────────────────────────
 import Layout from './components/Layout';
@@ -75,6 +76,9 @@ function App() {
 
           {/* ── Default redirect ── */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
+
+          <Route path="/verify-email/:token" element={<div>Verifying...</div>} />
+          <Route path="/email-verified"      element={<EmailVerified />} />
 
         </Routes>
       </ErrorBoundary>
