@@ -250,4 +250,151 @@ const sendDonorNotification = async ({ donorEmail, donorName, request }) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// Send email verification link to newly registered user
+// ─────────────────────────────────────────────────────────────
+const sendVerificationEmail = async ({ userEmail, userName, verificationUrl }) => {
+  if (!userEmail) return false;
+
+  try {
+    const transporter = createTransporter();
+
+    await transporter.sendMail({
+      from:    `"LifeLink Blood Network" <${process.env.EMAIL_USER}>`,
+      to:      userEmail,
+      subject: `Verify your LifeLink email address`,
+
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8"/>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #f3f4f6;
+              margin: 0; padding: 0;
+            }
+            .container {
+              max-width: 560px;
+              margin: 30px auto;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            .header {
+              background: linear-gradient(135deg, #1B2A4A, #C0171D);
+              padding: 30px;
+              text-align: center;
+              color: white;
+            }
+            .content {
+              background: white;
+              padding: 32px;
+            }
+            .verify-box {
+              background: #F0FDF4;
+              border: 2px solid #86EFAC;
+              border-radius: 12px;
+              padding: 20px;
+              text-align: center;
+              margin: 24px 0;
+            }
+            .button {
+              display: inline-block;
+              background: #15803D;
+              color: white;
+              padding: 14px 40px;
+              text-decoration: none;
+              border-radius: 10px;
+              font-weight: bold;
+              font-size: 15px;
+              margin-top: 12px;
+            }
+            .expire-note {
+              color: #9CA3AF;
+              font-size: 12px;
+              text-align: center;
+              margin-top: 20px;
+            }
+            .footer {
+              background: #1B2A4A;
+              padding: 16px;
+              text-align: center;
+              color: rgba(255,255,255,0.4);
+              font-size: 11px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="margin:0; font-size:24px;">🩸 LifeLink</h1>
+              <p style="margin:6px 0 0; color:rgba(255,255,255,0.75); font-size:12px;">
+                FIND. CONNECT. SAVE LIVES.
+              </p>
+            </div>
+
+            <div class="content">
+              <h2 style="color:#1B2A4A; margin-bottom:8px;">
+                Hi ${userName}! 
+              </h2>
+              <p style="color:#4B5563; font-size:15px;">
+                Welcome to LifeLink! Please verify your email address
+                to activate your account and start connecting with donors.
+              </p>
+
+              <div class="verify-box">
+                <p style="color:#15803D; font-weight:bold; margin-bottom:4px;">
+                  ✅ One click to verify
+                </p>
+                <p style="color:#6B7280; font-size:13px; margin-bottom:0;">
+                  Click the button below to confirm your email
+                </p>
+                <a href="${verificationUrl}" class="button">
+                  Verify My Email
+                </a>
+              </div>
+
+              <p class="expire-note">
+                This link expires in 24 hours.<br/>
+                If you didn't create a LifeLink account, ignore this email.
+              </p>
+
+              <p style="color:#6B7280; font-size:13px; margin-top:20px;">
+                Or copy this link into your browser:<br/>
+                <span style="color:#C0171D; font-size:11px; word-break:break-all;">
+                  ${verificationUrl}
+                </span>
+              </p>
+            </div>
+
+            <div class="footer">
+              <p>© 2026 LifeLink — Find. Connect. Save Lives.</p>
+              <p style="margin-top:4px;">
+                This is an automated message. Please do not reply.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    console.log(`📧 Verification email sent to ${userEmail}`);
+    return true;
+
+  } catch (error) {
+    console.error(`❌ Verification email failed for ${userEmail}:`, error.message);
+    return false;
+  }
+};
+
+module.exports = {
+  sendDonorNotification,
+  sendVerificationEmail,
+  verifyEmailConfig
+};
+
 module.exports = { sendDonorNotification, verifyEmailConfig };
