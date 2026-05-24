@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
 
 const UserSchema = new mongoose.Schema({
@@ -22,47 +21,42 @@ const UserSchema = new mongoose.Schema({
   },
   phone: {
     type:     String,
-    required: [true, 'Phone number is required']
+    required: [true, 'Phone is required']
   },
   sex: {
-    type: String,
-    enum: ['male', 'female'],
+    type:     String,
+    enum:     ['male', 'female'],
     required: false
   },
-
-  // ── Email Verification ──────────────────────────────────
   isEmailVerified: {
     type:    Boolean,
-    default: false   // false until user clicks verification link
+    default: false
   },
   emailVerificationToken: {
     type:    String,
-    default: null    // random token sent in email
+    default: null
   },
   emailVerificationExpires: {
     type:    Date,
-    default: null    // token expires after 24 hours
+    default: null
   },
-
 }, { timestamps: true });
 
-// ── Generate email verification token ────────────────────────
-// Called when user registers or requests new verification email
+// ── Generate verification token ───────────────────────────────
 UserSchema.methods.generateVerificationToken = function() {
-  // Create random 32-byte hex token
+  // Plain token goes in email link
   const token = crypto.randomBytes(32).toString('hex');
 
-  // Save hashed version to DB — never store plain tokens
+  // Hashed version saved to DB
   this.emailVerificationToken   = crypto
     .createHash('sha256')
     .update(token)
     .digest('hex');
 
-  // Token expires in 24 hours
+  // Expires in 24 hours
   this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
 
-  // Return PLAIN token — this goes in the email link
-  return token;
+  return token; // return PLAIN token for email
 };
 
 module.exports = mongoose.model('User', UserSchema);

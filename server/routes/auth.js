@@ -10,14 +10,12 @@ const {
   resendVerification
 } = require('../controllers/authController');
 
-// ── Public routes ─────────────────────────────────────────────
-router.post('/register', register);
-router.post('/login',    login);
+// Public
+router.post('/register',            register);
+router.post('/login',               login);
+router.get('/verify-email/:token',  verifyEmail);
 
-// Email verification — public (link in email, no token needed)
-router.get('/verify-email/:token', verifyEmail);
-
-// ── Private routes ────────────────────────────────────────────
+// Private
 router.get('/me',                   protect, getMe);
 router.put('/update',               protect, updateProfile);
 router.post('/resend-verification', protect, resendVerification);

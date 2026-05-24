@@ -7,22 +7,20 @@ const { checkEligibility }      = require('../utils/eligibility');
 const { sendVerificationEmail } = require('../utils/sendEmail');
 
 // ── Helper: generate JWT ──────────────────────────────────────
-const generateToken = (userId) => {
-  return jwt.sign(
-    { id: userId },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE }
-  );
-};
+const generateToken = (userId) => jwt.sign(
+  { id: userId },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRE }
+);
 
-// ── Helper: safe user object (no password) ────────────────────
+// ── Helper: safe user object ──────────────────────────────────
 const safeUser = (user) => ({
   id:              user._id,
   name:            user.name,
   email:           user.email,
   phone:           user.phone,
   sex:             user.sex,
-  isEmailVerified: user.isEmailVerified
+  isEmailVerified: user.isEmailVerified || false
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -33,9 +31,9 @@ const register = async (req, res) => {
   try {
     const { name, email, password, phone, sex, donorDetails } = req.body;
 
-    // Check if email already registered
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check duplicate email
+    const existing = await User.findOne({ email });
+    if (existing) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
@@ -46,55 +44,67 @@ const register = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password:        hashedPassword,
       phone,
       sex,
-      isEmailVerified: false  // must verify email
+      isEmailVerified: false
     });
 
-    // ── Create donor profile ──────────────────────────────────
+    // Create donor profile
     if (donorDetails) {
-      const eligibilityResult = checkEligibility(
-        donorDetails.healthFlags || {},
-        Number(donorDetails.age),
-        Number(donorDetails.weight),
-        null
-      );
-
-      await Donor.create({
-        userId:      user._id,
-        bloodType:   donorDetails.bloodType  || 'A+',
-        location:    donorDetails.location   || { district: 'Colombo' },
-        age:         Number(donorDetails.age),
-        weight:      Number(donorDetails.weight),
-        healthFlags: donorDetails.healthFlags || {},
-        isEligible:  eligibilityResult.eligible
-      });
+      try {
+        const eligibilityResult = checkEligibility(
+          donorDetails.healthFlags || {},
+          Number(donorDetails.age),
+          Number(donorDetails.weight),
+          null
+        );
+        await Donor.create({
+          userId:      user._id,
+          bloodType:   donorDetails.bloodType  || 'A+',
+          location:    donorDetails.location   || { district: 'Colombo' },
+          age:         Number(donorDetails.age),
+          weight:      Number(donorDetails.weight),
+          healthFlags: donorDetails.healthFlags || {},
+          isEligible:  eligibilityResult.eligible
+        });
+      } catch (donorErr) {
+        console.error('Donor create error:', donorErr.message);
+      }
     }
 
-    // ── Send verification email ───────────────────────────────
-    // Generate token and save to user
-    const verificationToken = user.generateVerificationToken();
-    await user.save();
+    // Generate verification token and send email
+    try {
+      const verificationToken = user.generateVerificationToken();
+      await user.save();
 
-    // Build verification URL
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+      const verificationUrl =
+        `${process.env.FRONTEND_URL}/email-verified` +
+        `?token=${verificationToken}&status=pending`;
 
-    // Send email in background — don't block registration
-    sendVerificationEmail({
-      userEmail:       user.email,
-      userName:        user.name,
-      verificationUrl: verificationUrl
-    }).catch(err => console.error('Verification email error:', err.message));
+      // Actually for backend redirect, use backend URL:
+      const backendVerifyUrl =
+        `${process.env.BACKEND_URL || 'http://localhost:5000'}` +
+        `/api/auth/verify-email/${verificationToken}`;
 
-    // Generate JWT and respond
+      sendVerificationEmail({
+        userEmail:       user.email,
+        userName:        user.name,
+        verificationUrl: backendVerifyUrl
+      }).catch(err =>
+        console.error('Verification email send error:', err.message)
+      );
+    } catch (emailErr) {
+      console.error('Verification token error:', emailErr.message);
+    }
+
     const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
       token,
-      user: safeUser(user),
-      message: 'Account created! Please check your email to verify your account.'
+      user:    safeUser(user),
+      message: 'Account created! Check your email to verify. 🩸'
     });
 
   } catch (error) {
@@ -126,7 +136,7 @@ const login = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: safeUser(user)
+      user:    safeUser(user)
     });
 
   } catch (error) {
@@ -137,86 +147,103 @@ const login = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // @route   GET /api/auth/verify-email/:token
-// @desc    Verify email address from link in email
-// @access  Public
+// @access  Public — called from email link
 // ─────────────────────────────────────────────────────────────
 const verifyEmail = async (req, res) => {
   try {
-    // Hash the token from URL to compare with DB
+    console.log('🔍 Verifying token:', req.params.token.substring(0, 10) + '...');
+
+    // Hash the token to compare with DB
     const hashedToken = crypto
       .createHash('sha256')
       .update(req.params.token)
       .digest('hex');
 
-    // Find user with matching token that hasn't expired
+    // Find user with valid token
     const user = await User.findOne({
       emailVerificationToken:   hashedToken,
-      emailVerificationExpires: { $gt: Date.now() } // not expired
+      emailVerificationExpires: { $gt: Date.now() }
     });
 
     if (!user) {
-      return res.status(400).json({
-        message: 'Verification link is invalid or has expired'
-      });
+      console.log('❌ Token invalid or expired');
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/email-verified?status=error`);
     }
 
-    // Mark email as verified and clear token
+    // Mark verified + clear token
     user.isEmailVerified          = true;
     user.emailVerificationToken   = null;
     user.emailVerificationExpires = null;
     await user.save();
 
-    console.log(`✅ Email verified for ${user.email}`);
+    console.log(`✅ Email verified: ${user.email}`);
 
-    // Redirect to frontend with success
-    res.redirect(
-      `${process.env.FRONTEND_URL}/email-verified?status=success`
-    );
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/email-verified?status=success`);
 
   } catch (error) {
     console.error('Verify email error:', error.message);
-    res.redirect(
-      `${process.env.FRONTEND_URL}/email-verified?status=error`
-    );
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/email-verified?status=error`);
   }
 };
 
 // ─────────────────────────────────────────────────────────────
 // @route   POST /api/auth/resend-verification
-// @desc    Resend verification email
 // @access  Private
 // ─────────────────────────────────────────────────────────────
 const resendVerification = async (req, res) => {
   try {
+    console.log('📧 Resend verification for user:', req.user.id);
+
+    // Get fresh user from DB — not from JWT
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     if (user.isEmailVerified) {
-      return res.status(400).json({
-        message: 'Email is already verified'
-      });
+      return res.status(400).json({ message: 'Email already verified' });
     }
 
     // Generate new token
     const verificationToken = user.generateVerificationToken();
     await user.save();
 
-    const verificationUrl =
-      `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    console.log('✅ New token generated for:', user.email);
 
-    await sendVerificationEmail({
+    // Build backend verification URL
+    const backendUrl = process.env.BACKEND_URL ||
+                       'https://lifelink-production-0edd.up.railway.app';
+
+    const verificationUrl =
+      `${backendUrl}/api/auth/verify-email/${verificationToken}`;
+
+    // Send email
+    const sent = await sendVerificationEmail({
       userEmail:       user.email,
       userName:        user.name,
       verificationUrl: verificationUrl
     });
 
-    res.json({
-      success: true,
-      message: 'Verification email resent! Check your inbox.'
-    });
+    if (sent) {
+      console.log(`📧 Verification email resent to ${user.email}`);
+      res.json({
+        success: true,
+        message: 'Verification email sent! Check your inbox.'
+      });
+    } else {
+      res.status(500).json({
+        message: 'Email service error — please try again later'
+      });
+    }
 
   } catch (error) {
     console.error('Resend verification error:', error.message);
-    res.status(500).json({ message: 'Failed to resend verification email' });
+    res.status(500).json({
+      message: 'Server error: ' + error.message
+    });
   }
 };
 
@@ -241,13 +268,11 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { name, phone, sex } = req.body;
-
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { name, phone, sex },
       { new: true }
     ).select('-password');
-
     res.json({ success: true, user });
   } catch (error) {
     console.error('Update profile error:', error.message);
