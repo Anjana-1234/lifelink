@@ -84,7 +84,7 @@ const submitFeedback = async (req, res) => {
     await donor.save();
 
     console.log(
-      ` Donor ${donorId} reputation updated: ${donor.reputationScore}%`
+      `⭐ Donor ${donorId} reputation updated: ${donor.reputationScore}%`
     );
 
     // ── Notify donor about feedback received ──────────────────
