@@ -1,33 +1,9 @@
 const BloodRequest   = require('../models/BloodRequest');
 const Donor          = require('../models/Donor');
 const Notification   = require('../models/Notification');
+const { emitToUser }      = require('../utils/socketHelper');
 const { findMatchingDonors, findCompatibleDonors } = require('../utils/matchDonors');
 const { sendDonorNotification } = require('../utils/sendEmail');
-
-// ── Helper: Send real-time notification via Socket.io ─────────
-// Safely tries to emit to a connected user
-// If user is offline, notification is still saved in DB
-// So they'll see it next time they open the app
-const emitToUser = (userId, notification) => {
-  try {
-    // Lazy import to avoid circular dependency issues
-    const { io, connectedUsers } = require('../index');
-
-    const socketId = connectedUsers.get(userId.toString());
-
-    if (socketId) {
-      // User is currently online — send immediately
-      io.to(socketId).emit('new_notification', notification);
-      console.log(`Real-time notification sent to user ${userId}`);
-    } else {
-      // User is offline — notification saved in DB, they'll see it on next login
-      console.log(`User ${userId} offline — notification saved to DB`);
-    }
-  } catch (err) {
-    // Never crash the request flow because of socket errors
-    console.error('Socket emit error (non-fatal):', err.message);
-  }
-};
 
 // ─────────────────────────────────────────────────────────────
 // @route   POST /api/requests
