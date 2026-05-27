@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth }       from './context/AuthContext';
+import { Toaster }       from 'react-hot-toast'; // ← ADD THIS
 import ErrorBoundary     from './components/ErrorBoundary';
 
 // ── Pages ─────────────────────────────────────────────────────
@@ -18,16 +19,12 @@ import EmailVerified from './pages/EmailVerified';
 import Layout from './components/Layout';
 
 // ── PublicRoute ───────────────────────────────────────────────
-// If already logged in → redirect to dashboard
-// Stops logged-in users seeing login/register pages
 const PublicRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? <Navigate to="/dashboard" /> : children;
 };
 
 // ── PrivateRoute ──────────────────────────────────────────────
-// If NOT logged in → redirect to login
-// Wraps page with Layout (Navbar + Footer)
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
   return token
@@ -39,8 +36,46 @@ const PrivateRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
-      {/* ErrorBoundary inside BrowserRouter so navigate works in error page */}
       <ErrorBoundary>
+
+        {/* ── Global Toast Notifications ── */}
+        {/* Must be here so toasts work on every page */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: '12px',
+              padding:      '12px 16px',
+              fontSize:     '14px',
+              fontWeight:   '500',
+              boxShadow:    '0 4px 12px rgba(0,0,0,0.15)',
+            },
+            success: {
+              style: {
+                background: '#DCFCE7',
+                color:      '#15803D',
+                border:     '1px solid #86EFAC',
+              },
+              iconTheme: {
+                primary:    '#15803D',
+                secondary:  '#DCFCE7',
+              },
+            },
+            error: {
+              style: {
+                background: '#FEE2E2',
+                color:      '#C0171D',
+                border:     '1px solid #FCA5A5',
+              },
+              iconTheme: {
+                primary:    '#C0171D',
+                secondary:  '#FEE2E2',
+              },
+            },
+          }}
+        />
+
         <Routes>
 
           {/* ── Public Routes (no navbar) ── */}
@@ -49,6 +84,14 @@ function App() {
           } />
           <Route path="/register" element={
             <PublicRoute><Register /></PublicRoute>
+          } />
+
+          {/* ── Email verification routes ── */}
+          <Route path="/email-verified" element={<EmailVerified />} />
+          <Route path="/verify-email/:token" element={
+            <div className="min-h-screen flex items-center justify-center">
+              <p className="text-gray-500">Verifying your email...</p>
+            </div>
           } />
 
           {/* ── Private Routes (with Navbar + Footer via Layout) ── */}
@@ -74,11 +117,8 @@ function App() {
             <PrivateRoute><DonorGuide /></PrivateRoute>
           } />
 
-          {/* ── Default redirect ── */}
+          {/* Default redirect */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
-
-          <Route path="/verify-email/:token" element={<div>Verifying...</div>} />
-          <Route path="/email-verified"      element={<EmailVerified />} />
 
         </Routes>
       </ErrorBoundary>

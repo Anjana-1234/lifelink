@@ -57,13 +57,13 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log('🔌 Socket connected:', socket.id);
+  console.log(' Socket connected:', socket.id);
 
   // Frontend calls this right after connecting
   // Saves userId → socketId so we can find them later
   socket.on('register', (userId) => {
     connectedUsers.set(userId.toString(), socket.id);
-    console.log(`✅ User ${userId} registered → socket ${socket.id}`);
+    console.log(` User ${userId} registered → socket ${socket.id}`);
   });
 
   socket.on('disconnect', () => {
@@ -93,6 +93,7 @@ app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/donors',        require('./routes/donor'));
 app.use('/api/requests',      require('./routes/request'));
 app.use('/api/notifications', require('./routes/notification'));
+app.use('/api/feedback',      require('./routes/feedback'));
 
 // ── Health check route ────────────────────────────────────────
 app.get('/', (req, res) => {
