@@ -3,6 +3,7 @@ import { useAuth }             from '../context/AuthContext';
 import axios                   from 'axios';
 import toast                   from 'react-hot-toast';
 import API_URL                 from '../services/api';
+import OTPModal                from '../components/OTPModal';
 
 // ── Constants ─────────────────────────────────────────────────
 const DISTRICTS = [
@@ -16,15 +17,15 @@ const DISTRICTS = [
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const HEALTH_FLAGS = [
-  ['hasFever','Currently have fever or flu'],
-  ['onAntibiotics','Currently on antibiotics'],
-  ['recentSurgery', 'Had surgery in the last 6 months'],
-  ['recentTattoo', 'Got a tattoo or piercing in last 6 months'],
-  ['isPregnant', 'Currently pregnant or breastfeeding'],
-  ['hasChronicDisease', 'Have a chronic disease (HIV, Hepatitis, Diabetes, etc.)'],
+  ['hasFever',          '🤒', 'Currently have fever or flu'                          ],
+  ['onAntibiotics',     '💊', 'Currently on antibiotics'                             ],
+  ['recentSurgery',     '🏥', 'Had surgery in the last 6 months'                     ],
+  ['recentTattoo',      '🖊️', 'Got a tattoo or piercing in last 6 months'            ],
+  ['isPregnant',        '🤰', 'Currently pregnant or breastfeeding'                  ],
+  ['hasChronicDisease', '❤️‍🩹', 'Have a chronic disease (HIV, Hepatitis, Diabetes, etc.)'],
 ];
 
-// Get user initials for avatar
+// ── Get user initials for avatar ──────────────────────────────
 const getInitials = (name) => {
   if (!name) return '?';
   const parts = name.trim().split(' ');
@@ -36,28 +37,34 @@ const Profile = () => {
   const { token, user } = useAuth();
 
   // ── State ─────────────────────────────────────────────────
-  const [loading,      setLoading]      = useState(true);
-  const [saving,       setSaving]       = useState(false);
-  const [activeTab,    setActiveTab]    = useState('personal');
-  const [donorProfile, setDonorProfile] = useState(null);
+  const [loading,         setLoading]         = useState(true);
+  const [saving,          setSaving]          = useState(false);
+  const [activeTab,       setActiveTab]       = useState('personal');
+  const [donorProfile,    setDonorProfile]    = useState(null);
+  const [otpModal,        setOtpModal]        = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
-  // Personal info — includes sex
+  // Personal info form
   const [personalForm, setPersonalForm] = useState({
     name:  '',
     phone: '',
     email: '',
-    sex:   ''  // 'male' or 'female'
+    sex:   ''
   });
 
-  // Health profile
+  // Health profile form
   const [healthForm, setHealthForm] = useState({
     bloodType: 'A+',
     location:  { district: 'Colombo', city: '' },
     age:       '',
     weight:    '',
     healthFlags: {
-      hasFever: false, onAntibiotics: false, recentSurgery: false,
-      recentTattoo: false, isPregnant: false, hasChronicDisease: false,
+      hasFever:          false,
+      onAntibiotics:     false,
+      recentSurgery:     false,
+      recentTattoo:      false,
+      isPregnant:        false,
+      hasChronicDisease: false,
     }
   });
 
@@ -77,7 +84,7 @@ const Profile = () => {
       const userData  = userRes.data.user;
       const donorData = donorRes.data.donor;
 
-      // Populate personal form including sex
+      // Populate personal form
       setPersonalForm({
         name:  userData.name  || '',
         phone: userData.phone || '',
@@ -85,6 +92,10 @@ const Profile = () => {
         sex:   userData.sex   || ''
       });
 
+      // Set phone verification status from DB
+      setIsPhoneVerified(userData.isPhoneVerified || false);
+
+      // Populate health form
       if (donorData) {
         setDonorProfile(donorData);
         setHealthForm({
@@ -93,11 +104,16 @@ const Profile = () => {
           age:         donorData.age       || '',
           weight:      donorData.weight    || '',
           healthFlags: donorData.healthFlags || {
-            hasFever: false, onAntibiotics: false, recentSurgery: false,
-            recentTattoo: false, isPregnant: false, hasChronicDisease: false,
+            hasFever:          false,
+            onAntibiotics:     false,
+            recentSurgery:     false,
+            recentTattoo:      false,
+            isPregnant:        false,
+            hasChronicDisease: false,
           }
         });
       }
+
     } catch (err) {
       toast.error('Failed to load profile data');
     } finally {
@@ -112,10 +128,14 @@ const Profile = () => {
     try {
       await axios.put(
         `${API_URL}/api/auth/update`,
-        { name: personalForm.name, phone: personalForm.phone, sex: personalForm.sex },
+        {
+          name:  personalForm.name,
+          phone: personalForm.phone,
+          sex:   personalForm.sex
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Personal info updated successfully! ✅');
+      toast.success('Personal info updated! ✅');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update');
     } finally {
@@ -133,10 +153,10 @@ const Profile = () => {
         healthForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('Health profile updated! ');
+      toast.success('Health profile updated! 🩸');
       fetchProfileData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update health profile');
+      toast.error(err.response?.data?.message || 'Failed to update');
     } finally {
       setSaving(false);
     }
@@ -145,7 +165,10 @@ const Profile = () => {
   const handleHealthFlag = (flag) => {
     setHealthForm({
       ...healthForm,
-      healthFlags: { ...healthForm.healthFlags, [flag]: !healthForm.healthFlags[flag] }
+      healthFlags: {
+        ...healthForm.healthFlags,
+        [flag]: !healthForm.healthFlags[flag]
+      }
     });
   };
 
@@ -155,6 +178,7 @@ const Profile = () => {
     return true;
   });
 
+  // ── Loading State ─────────────────────────────────────────
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="text-center text-gray-400">
@@ -168,67 +192,115 @@ const Profile = () => {
     <div className="max-w-3xl mx-auto py-10 px-4">
 
       {/* ── Header with Avatar ── */}
-      {/* After user name and email, add verified badge */}
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div
+        className="rounded-2xl p-6 mb-6 text-white"
+        style={{ background: 'linear-gradient(135deg, #1B2A4A, #C0171D)' }}
+      >
+        <div className="flex items-center gap-5">
 
-        {/* Sex badge */}
-        {personalForm.sex && (
-          <span className="px-3 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
-            {personalForm.sex === 'male' ? '♂ Male' : '♀ Female'}
-          </span>
-        )}
+          {/* Avatar circle */}
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center
+                       text-3xl font-black flex-shrink-0 border-4 border-white/30"
+            style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+          >
+            {getInitials(user?.name)}
+          </div>
 
-        {/* Email verification badge */}
-        {user?.isEmailVerified ? (
-          <span
-            className="px-3 py-0.5 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: 'rgba(21,128,61,0.3)',
-              border: '1px solid #86EFAC',
-              color: 'white'
-            }}
-          >
-            ✅ Email Verified
-          </span>
-        ) : (
-          <span
-            className="px-3 py-0.5 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: 'rgba(180,83,9,0.3)',
-              border: '1px solid #FDE68A',
-              color: 'white'
-            }}
-          >
-            ⚠️ Email Not Verified
-          </span>
-        )}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold truncate">{user?.name}</h1>
+            <p className="text-white/70 text-sm mt-0.5 truncate">
+              {user?.email}
+            </p>
 
-        {/* Donor eligibility badge */}
-        {donorProfile && (
-          <span
-            className="px-3 py-1 rounded-full text-xs font-medium"
-            style={{
-              backgroundColor: donorProfile.isEligible
-                ? 'rgba(21,128,61,0.3)' : 'rgba(192,23,29,0.3)',
-              border: `1px solid ${donorProfile.isEligible ? '#86EFAC' : '#FCA5A5'}`
-            }}
-          >
-            {donorProfile.isEligible ? '✅ Eligible to donate' : '⏸️ Not eligible'}
-          </span>
-        )}
+            {/* ── Badges Row ── */}
+            <div className="flex flex-wrap gap-2 mt-2">
+
+              {/* Sex badge */}
+              {personalForm.sex && (
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-xs font-medium
+                             bg-white/20 text-white"
+                >
+                  {personalForm.sex === 'male' ? ' Male' : ' Female'}
+                </span>
+              )}
+
+              {/* Phone verified badge */}
+              {isPhoneVerified && (
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  style={{
+                    backgroundColor: 'rgba(21,128,61,0.35)',
+                    border:          '1px solid #86EFAC',
+                    color:           'white'
+                  }}
+                >
+                  📱 Phone Verified
+                </span>
+              )}
+
+              {/* Email verified badge */}
+              {user?.isEmailVerified ? (
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  style={{
+                    backgroundColor: 'rgba(21,128,61,0.35)',
+                    border:          '1px solid #86EFAC',
+                    color:           'white'
+                  }}
+                >
+                  ✅ Email Verified
+                </span>
+              ) : (
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  style={{
+                    backgroundColor: 'rgba(180,83,9,0.3)',
+                    border:          '1px solid #FDE68A',
+                    color:           'white'
+                  }}
+                >
+                  ⚠️ Email Not Verified
+                </span>
+              )}
+
+              {/* Donor eligibility badge */}
+              {donorProfile && (
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-medium"
+                  style={{
+                    backgroundColor: donorProfile.isEligible
+                      ? 'rgba(21,128,61,0.35)'
+                      : 'rgba(192,23,29,0.35)',
+                    border: `1px solid ${
+                      donorProfile.isEligible ? '#86EFAC' : '#FCA5A5'
+                    }`
+                  }}
+                >
+                  {donorProfile.isEligible
+                    ? '✅ Eligible to donate'
+                    : '⏸️ Not eligible'}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Tab Switcher ── */}
       <div className="flex gap-2 mb-6 bg-white rounded-xl shadow p-1 w-fit">
         {[
-          { key: 'personal', label: ' Personal Info'  },
-          { key: 'health',   label: ' Health Profile' },
+          { key: 'personal', label: '👤 Personal Info'  },
+          { key: 'health',   label: '🩸 Health Profile' },
         ].map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-5 py-2 rounded-lg text-sm font-medium transition
-              ${activeTab === tab.key ? 'text-white' : 'text-gray-500 hover:text-gray-700'}`}
+              ${activeTab === tab.key
+                ? 'text-white'
+                : 'text-gray-500 hover:text-gray-700'}`}
             style={activeTab === tab.key ? { backgroundColor: '#C0171D' } : {}}
           >
             {tab.label}
@@ -241,7 +313,9 @@ const Profile = () => {
       ════════════════════════════════════════ */}
       {activeTab === 'personal' && (
         <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="font-semibold text-gray-700 mb-5">Personal Information</h2>
+          <h2 className="font-semibold text-gray-700 mb-5">
+            Personal Information
+          </h2>
 
           <form onSubmit={handleSavePersonal} className="space-y-4">
 
@@ -252,7 +326,9 @@ const Profile = () => {
               </label>
               <input
                 value={personalForm.name}
-                onChange={e => setPersonalForm({ ...personalForm, name: e.target.value })}
+                onChange={e => setPersonalForm({
+                  ...personalForm, name: e.target.value
+                })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5
                            focus:outline-none transition"
                 onFocus={e => e.target.style.borderColor = '#C0171D'}
@@ -260,14 +336,16 @@ const Profile = () => {
               />
             </div>
 
-            {/* Phone */}
+            {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Phone Number
               </label>
               <input
                 value={personalForm.phone}
-                onChange={e => setPersonalForm({ ...personalForm, phone: e.target.value })}
+                onChange={e => setPersonalForm({
+                  ...personalForm, phone: e.target.value
+                })}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5
                            focus:outline-none transition"
                 onFocus={e => e.target.style.borderColor = '#C0171D'}
@@ -275,11 +353,72 @@ const Profile = () => {
               />
             </div>
 
+            {/* ── Phone Verification Status ── */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                Phone Verification
+              </label>
+
+              {isPhoneVerified ? (
+                // Already verified
+                <div
+                  className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{
+                    backgroundColor: '#DCFCE7',
+                    border:          '1px solid #86EFAC'
+                  }}
+                >
+                  <span className="text-2xl">📱</span>
+                  <div>
+                    <p className="text-sm font-semibold text-green-700">
+                      Phone Verified ✅
+                    </p>
+                    <p className="text-xs text-green-600">
+                      {personalForm.phone} is verified
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Not verified
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{
+                    backgroundColor: '#FFF7ED',
+                    border:          '1px solid #FDE68A'
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">📱</span>
+                    <div>
+                      <p className="text-sm font-semibold text-orange-700">
+                        Phone Not Verified
+                      </p>
+                      <p className="text-xs text-orange-600">
+                        Verify to build donor trust
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOtpModal(true)}
+                    className="px-3 py-1.5 rounded-lg text-white text-xs
+                               font-semibold transition hover:opacity-90
+                               flex-shrink-0"
+                    style={{ backgroundColor: '#B45309' }}
+                  >
+                    Verify Now
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Email — read only */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Email Address
-                <span className="text-gray-400 font-normal ml-1">(cannot be changed)</span>
+                <span className="text-gray-400 font-normal ml-1">
+                  (cannot be changed)
+                </span>
               </label>
               <input
                 value={personalForm.email}
@@ -296,24 +435,25 @@ const Profile = () => {
               </label>
               <div className="flex gap-3">
                 {[
-                  { value: 'male',   label: ' Male' },
+                  { value: 'male',   label: ' Male'   },
                   { value: 'female', label: ' Female' },
-                ].map(({ value, label, icon }) => (
+                ].map(({ value, label }) => (
                   <button
                     key={value}
                     type="button"
-                    onClick={() => setPersonalForm({ ...personalForm, sex: value })}
+                    onClick={() => setPersonalForm({
+                      ...personalForm, sex: value
+                    })}
                     className={`flex-1 flex items-center justify-center gap-2
-                                py-2.5 rounded-xl border-2 font-medium text-sm transition
+                                py-2.5 rounded-xl border-2 font-medium text-sm
+                                transition
                       ${personalForm.sex === value
                         ? 'text-white border-transparent'
-                        : 'border-gray-300 text-gray-600 hover:border-red-400'
-                      }`}
+                        : 'border-gray-300 text-gray-600 hover:border-red-400'}`}
                     style={personalForm.sex === value
                       ? { backgroundColor: '#C0171D' } : {}}
                   >
-                    <span>{icon}</span>
-                    <span>{label}</span>
+                    {label}
                   </button>
                 ))}
               </div>
@@ -338,7 +478,9 @@ const Profile = () => {
       ════════════════════════════════════════ */}
       {activeTab === 'health' && (
         <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="font-semibold text-gray-700 mb-1">Health Profile</h2>
+          <h2 className="font-semibold text-gray-700 mb-1">
+            Health Profile
+          </h2>
           <p className="text-xs text-gray-400 mb-5">
             Keep this updated so we can match you accurately in emergencies.
           </p>
@@ -347,16 +489,24 @@ const Profile = () => {
 
             {/* Blood Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Blood Type</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                Blood Type
+              </label>
               <div className="grid grid-cols-4 gap-2">
                 {BLOOD_TYPES.map(bt => (
-                  <button key={bt} type="button"
-                    onClick={() => setHealthForm({ ...healthForm, bloodType: bt })}
+                  <button
+                    key={bt}
+                    type="button"
+                    onClick={() => setHealthForm({
+                      ...healthForm, bloodType: bt
+                    })}
                     className={`py-2.5 rounded-xl font-bold border-2 transition
                       ${healthForm.bloodType === bt
                         ? 'text-white border-transparent'
                         : 'border-gray-200 text-gray-600 hover:border-red-300'}`}
-                    style={healthForm.bloodType === bt ? { backgroundColor: '#C0171D' } : {}}>
+                    style={healthForm.bloodType === bt
+                      ? { backgroundColor: '#C0171D' } : {}}
+                  >
                     {bt}
                   </button>
                 ))}
@@ -365,7 +515,9 @@ const Profile = () => {
 
             {/* District */}
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">District</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                District
+              </label>
               <select
                 value={healthForm.location?.district}
                 onChange={e => setHealthForm({
@@ -382,7 +534,8 @@ const Profile = () => {
             {/* City */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
-                City / Town <span className="text-gray-400">(optional)</span>
+                City / Town{' '}
+                <span className="text-gray-400">(optional)</span>
               </label>
               <input
                 value={healthForm.location?.city || ''}
@@ -401,40 +554,64 @@ const Profile = () => {
             {/* Age & Weight */}
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Age</label>
-                <input type="number" value={healthForm.age} min="18" max="65"
-                  onChange={e => setHealthForm({ ...healthForm, age: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                             focus:outline-none transition"
+                <label className="block text-sm font-medium
+                                  text-gray-600 mb-1">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  value={healthForm.age}
+                  min="18" max="65"
+                  onChange={e => setHealthForm({
+                    ...healthForm, age: e.target.value
+                  })}
+                  className="w-full border border-gray-300 rounded-lg
+                             px-4 py-2.5 focus:outline-none transition"
                   onFocus={e => e.target.style.borderColor = '#C0171D'}
-                  onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
+                  onBlur={e  => e.target.style.borderColor = '#D1D5DB'}
+                />
                 <p className="text-xs text-gray-400 mt-1">Must be 18–65</p>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-600 mb-1">Weight (kg)</label>
-                <input type="number" value={healthForm.weight} min="50"
-                  onChange={e => setHealthForm({ ...healthForm, weight: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5
-                             focus:outline-none transition"
+                <label className="block text-sm font-medium
+                                  text-gray-600 mb-1">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  value={healthForm.weight}
+                  min="50"
+                  onChange={e => setHealthForm({
+                    ...healthForm, weight: e.target.value
+                  })}
+                  className="w-full border border-gray-300 rounded-lg
+                             px-4 py-2.5 focus:outline-none transition"
                   onFocus={e => e.target.style.borderColor = '#C0171D'}
-                  onBlur={e  => e.target.style.borderColor = '#D1D5DB'} />
+                  onBlur={e  => e.target.style.borderColor = '#D1D5DB'}
+                />
                 <p className="text-xs text-gray-400 mt-1">Minimum 50kg</p>
               </div>
             </div>
 
-            {/* Health Flags — pregnant hidden for males */}
+            {/* Health Flags */}
             <div className="bg-red-50 rounded-xl p-4">
               <p className="text-sm font-medium text-gray-700 mb-3">
-                🩸 Check any that currently apply to you:
+                ⚠️ Check any that currently apply to you:
               </p>
               {visibleFlags.map(([flag, icon, label]) => (
-                <label key={flag}
-                  className="flex items-center gap-3 py-1.5 cursor-pointer group">
-                  <input type="checkbox"
+                <label
+                  key={flag}
+                  className="flex items-center gap-3 py-1.5
+                             cursor-pointer group"
+                >
+                  <input
+                    type="checkbox"
                     checked={healthForm.healthFlags[flag] || false}
                     onChange={() => handleHealthFlag(flag)}
-                    className="w-4 h-4 accent-red-600 cursor-pointer" />
-                  <span className="text-sm text-gray-700 group-hover:text-red-700 transition">
+                    className="w-4 h-4 accent-red-600 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700
+                                   group-hover:text-red-700 transition">
                     {icon} {label}
                   </span>
                 </label>
@@ -446,39 +623,63 @@ const Profile = () => {
               <div
                 className="rounded-xl p-4"
                 style={{
-                  backgroundColor: donorProfile.isEligible ? '#DCFCE7' : '#FEE2E2',
-                  borderLeft: `4px solid ${donorProfile.isEligible ? '#15803D' : '#C0171D'}`
+                  backgroundColor: donorProfile.isEligible
+                    ? '#DCFCE7' : '#FEE2E2',
+                  borderLeft: `4px solid ${
+                    donorProfile.isEligible ? '#15803D' : '#C0171D'
+                  }`
                 }}
               >
-                <p className="font-semibold text-sm"
-                  style={{ color: donorProfile.isEligible ? '#15803D' : '#C0171D' }}>
+                <p
+                  className="font-semibold text-sm"
+                  style={{
+                    color: donorProfile.isEligible ? '#15803D' : '#C0171D'
+                  }}
+                >
                   {donorProfile.isEligible
                     ? '✅ Currently eligible to donate'
                     : '⏸️ Currently not eligible to donate'}
                 </p>
                 {!donorProfile.isEligible && donorProfile.nextEligibleDate && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Next eligible: <strong>
-                      {new Date(donorProfile.nextEligibleDate).toLocaleDateString()}
+                    Next eligible:{' '}
+                    <strong>
+                      {new Date(donorProfile.nextEligibleDate)
+                        .toLocaleDateString()}
                     </strong>
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  Eligibility recalculates automatically when you save changes
+                  Eligibility recalculates automatically when you save
                 </p>
               </div>
             )}
 
             {/* Save Button */}
-            <button type="submit" disabled={saving}
+            <button
+              type="submit"
+              disabled={saving}
               className="w-full py-2.5 rounded-xl text-white font-semibold
                          transition disabled:opacity-50"
-              style={{ backgroundColor: '#C0171D' }}>
-              {saving ? 'Saving...' : 'Update Health Profile'}
+              style={{ backgroundColor: '#C0171D' }}
+            >
+              {saving ? 'Saving...' : 'Update Health Profile 🩸'}
             </button>
           </form>
         </div>
       )}
+
+      {/* ── OTP Modal ── */}
+      <OTPModal
+        isOpen={otpModal}
+        onClose={() => setOtpModal(false)}
+        phone={personalForm.phone}
+        onVerified={() => {
+          setIsPhoneVerified(true);
+          setOtpModal(false);
+          toast.success('Phone verified successfully! 📱');
+        }}
+      />
     </div>
   );
 };
