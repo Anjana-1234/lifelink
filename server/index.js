@@ -94,6 +94,8 @@ app.use('/api/donors',        require('./routes/donor'));
 app.use('/api/requests',      require('./routes/request'));
 app.use('/api/notifications', require('./routes/notification'));
 app.use('/api/feedback',      require('./routes/feedback'));
+app.use('/api/reports',       require('./routes/report'));
+app.use('/api/otp',           require('./routes/otp'));
 
 // ── Health check route ────────────────────────────────────────
 app.get('/', (req, res) => {
