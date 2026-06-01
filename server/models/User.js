@@ -28,6 +28,8 @@ const UserSchema = new mongoose.Schema({
     enum:     ['male', 'female'],
     required: false
   },
+
+  // ── Email Verification ──────────────────────────────────
   isEmailVerified: {
     type:    Boolean,
     default: false
@@ -40,23 +42,24 @@ const UserSchema = new mongoose.Schema({
     type:    Date,
     default: null
   },
+
+  // ── Phone Verification ──────────────────────────────────
+  isPhoneVerified: {
+    type:    Boolean,
+    default: false
+  },
+
 }, { timestamps: true });
 
-// ── Generate verification token ───────────────────────────────
+// ── Generate email verification token ────────────────────────
 UserSchema.methods.generateVerificationToken = function() {
-  // Plain token goes in email link
   const token = crypto.randomBytes(32).toString('hex');
-
-  // Hashed version saved to DB
   this.emailVerificationToken   = crypto
     .createHash('sha256')
     .update(token)
     .digest('hex');
-
-  // Expires in 24 hours
   this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
-
-  return token; // return PLAIN token for email
+  return token;
 };
 
 module.exports = mongoose.model('User', UserSchema);
