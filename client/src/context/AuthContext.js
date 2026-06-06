@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
     JSON.parse(localStorage.getItem('user'))
   );
 
-  // ── Helper: save auth to localStorage + state ─────────────
   const saveAuth = (token, user) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user',  JSON.stringify(user));
@@ -22,7 +21,9 @@ export const AuthProvider = ({ children }) => {
 
   // ── Register ──────────────────────────────────────────────
   const register = async (formData) => {
-    const res = await axios.post(`${API_URL}/api/auth/register`, formData);
+    const res = await axios.post(
+      `${API_URL}/api/auth/register`, formData
+    );
     saveAuth(res.data.token, res.data.user);
     toast.success('Account created! Check your email to verify. 🩸');
     return res.data;
@@ -30,9 +31,13 @@ export const AuthProvider = ({ children }) => {
 
   // ── Login ─────────────────────────────────────────────────
   const login = async (formData) => {
-    const res = await axios.post(`${API_URL}/api/auth/login`, formData);
+    const res = await axios.post(
+      `${API_URL}/api/auth/login`, formData
+    );
     saveAuth(res.data.token, res.data.user);
-    toast.success(`Welcome back, ${res.data.user.name.split(' ')[0]}! `);
+    toast.success(
+      `Welcome back, ${res.data.user.name.split(' ')[0]}! `
+    );
     return res.data;
   };
 
@@ -46,32 +51,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   // ── Refresh user from backend ─────────────────────────────
-  // Called after email verification to update isEmailVerified in state
-  // ── Refresh user from backend ─────────────────────────────
-const refreshUser = async () => {
-  if (!token) return;
-  try {
-    const res = await axios.get(
-      `${API_URL}/api/auth/me`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    const updatedUser = {
-      id:              res.data.user._id,
-      name:            res.data.user.name,
-      email:           res.data.user.email,
-      phone:           res.data.user.phone,
-      sex:             res.data.user.sex,
-      isEmailVerified: res.data.user.isEmailVerified || false
-    };
-
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
-    return updatedUser;
-  } catch (err) {
-    console.error('Refresh user error:', err.message);
-  }
-};
+  // Updates localStorage with latest isEmailVerified status
+  // Called by Layout on mount so banner shows/hides correctly
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(
+        `${API_URL}/api/auth/me`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const u = res.data.user;
+      const updatedUser = {
+        id:              u._id,
+        name:            u.name,
+        email:           u.email,
+        phone:           u.phone,
+        sex:             u.sex,
+        isEmailVerified: u.isEmailVerified  || false,
+        isPhoneVerified: u.isPhoneVerified  || false
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (err) {
+      console.error('Refresh user error:', err.message);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{
@@ -80,7 +85,7 @@ const refreshUser = async () => {
       register,
       login,
       logout,
-      refreshUser  // ← export so Layout can call it
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>
