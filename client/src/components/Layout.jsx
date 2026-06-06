@@ -1,32 +1,103 @@
-import { useState, useEffect } from 'react';
-import Navbar  from './Navbar';
-import Footer  from './Footer';
-import backTop from '../assets/back-to-top.jpg';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth }   from '../context/AuthContext';
+import axios         from 'axios';
+import toast         from 'react-hot-toast';
+import Navbar        from './Navbar';
+import Footer        from './Footer';
+import backTop       from '../assets/back-to-top.jpg';
+import API_URL       from '../services/api';
 
 const Layout = ({ children }) => {
+  const { user, token, refreshUser } = useAuth();
 
   const [showButton, setShowButton] = useState(false);
+  const [resending,  setResending]  = useState(false);
 
+  // ── Scroll listener ───────────────────────────────────────
   useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ── Refresh user on mount to get latest isEmailVerified ──
+  const doRefresh = useCallback(async () => {
+    if (token && refreshUser) {
+      try { await refreshUser(); } catch (e) {}
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => { doRefresh(); }, [doRefresh]);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // ── Resend verification email ─────────────────────────────
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await axios.post(
+        `${API_URL}/api/auth/resend-verification`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Verification email sent! Check your inbox. 📧');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to resend');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Show banner only if isEmailVerified is explicitly false
+  const showBanner = user && user.isEmailVerified === false;
 
   return (
     <div
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: '#F3F4F6' }}
     >
-      {/* Navbar */}
+      {/* Fixed Navbar */}
       <Navbar />
 
-      {/* Page content — pt-16 pushes below fixed navbar */}
-      <main className="flex-1 pt-16">
+      {/* ── Verification Banner ── */}
+      {showBanner && (
+        <div
+          className="fixed left-0 right-0 z-40 flex items-center
+                     justify-between gap-3 px-4 py-2"
+          style={{
+            top:             '64px',
+            backgroundColor: '#FEFCE8',
+            borderBottom:    '2px solid #FDE047',
+            minHeight:       '44px'
+          }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-base flex-shrink-0">📧</span>
+            <p className="text-sm text-yellow-800 truncate">
+              <strong>Verify your email</strong>
+              {' — '}check your inbox for the verification link.
+            </p>
+          </div>
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="flex-shrink-0 text-xs font-bold px-3 py-1.5
+                       rounded-lg text-white transition disabled:opacity-50"
+            style={{ backgroundColor: '#B45309' }}
+          >
+            {resending ? 'Sending...' : 'Resend'}
+          </button>
+        </div>
+      )}
+
+      {/* Page Content */}
+      <main
+        className="flex-1"
+        style={{ paddingTop: showBanner ? '108px' : '64px' }}
+      >
         {children}
       </main>
 
