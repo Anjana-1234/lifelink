@@ -197,7 +197,6 @@ const resendVerification = async (req, res) => {
   try {
     console.log('📧 Resend verification for user:', req.user.id);
 
-    // Get fresh user from DB — not from JWT
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -211,16 +210,19 @@ const resendVerification = async (req, res) => {
     const verificationToken = user.generateVerificationToken();
     await user.save();
 
-    console.log('✅ New token generated for:', user.email);
-
-    // Build backend verification URL
-    const backendUrl = process.env.BACKEND_URL ||
-                       'https://lifelink-production-0edd.up.railway.app';
+    // ── Use Railway backend URL ───────────────────────────
+    // Falls back to localhost for local development
+    const backendUrl =
+      process.env.BACKEND_URL ||
+      process.env.RAILWAY_STATIC_URL ||
+      'https://lifelink-production-0edd.up.railway.app';
 
     const verificationUrl =
       `${backendUrl}/api/auth/verify-email/${verificationToken}`;
 
-    // Send email
+    console.log('📧 Sending verification to:', user.email);
+    console.log('🔗 Verification URL:', verificationUrl);
+
     const sent = await sendVerificationEmail({
       userEmail:       user.email,
       userName:        user.name,
@@ -228,14 +230,14 @@ const resendVerification = async (req, res) => {
     });
 
     if (sent) {
-      console.log(`📧 Verification email resent to ${user.email}`);
-      res.json({
+      console.log(`✅ Verification email sent to ${user.email}`);
+      return res.json({
         success: true,
         message: 'Verification email sent! Check your inbox.'
       });
     } else {
-      res.status(500).json({
-        message: 'Email service error — please try again later'
+      return res.status(500).json({
+        message: 'Email failed to send. Please try again later.'
       });
     }
 
