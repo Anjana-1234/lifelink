@@ -13,14 +13,12 @@ const Layout = ({ children }) => {
   const [showButton, setShowButton] = useState(false);
   const [resending,  setResending]  = useState(false);
 
-  // ── Scroll listener ───────────────────────────────────────
   useEffect(() => {
     const handleScroll = () => setShowButton(window.scrollY > 300);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // ── Refresh user on mount to get latest isEmailVerified ──
   const doRefresh = useCallback(async () => {
     if (token && refreshUser) {
       try { await refreshUser(); } catch (e) {}
@@ -34,7 +32,6 @@ const Layout = ({ children }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ── Resend verification email ─────────────────────────────
   const handleResend = async () => {
     setResending(true);
     try {
@@ -51,7 +48,6 @@ const Layout = ({ children }) => {
     }
   };
 
-  // Show banner only if isEmailVerified is explicitly false
   const showBanner = user && user.isEmailVerified === false;
 
   return (
@@ -59,26 +55,26 @@ const Layout = ({ children }) => {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: '#F3F4F6' }}
     >
-      {/* Fixed Navbar */}
+      {/* ── Navbar ── */}
       <Navbar />
 
       {/* ── Verification Banner ── */}
       {showBanner && (
         <div
           className="fixed left-0 right-0 z-40 flex items-center
-                     justify-between gap-3 px-4 py-2"
+                     justify-between gap-3 px-4"
           style={{
-            top:             '64px',
+            top:             '90px',
+            height:          '70px',
             backgroundColor: '#FEFCE8',
             borderBottom:    '2px solid #FDE047',
-            minHeight:       '44px'
           }}
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <span className="text-base flex-shrink-0">📧</span>
             <p className="text-sm text-yellow-800 truncate">
               <strong>Verify your email</strong>
-              {' — '}check your inbox for the verification link.
+              {' — '}check your inbox for the link.
             </p>
           </div>
           <button
@@ -93,18 +89,18 @@ const Layout = ({ children }) => {
         </div>
       )}
 
-      {/* Page Content */}
+      {/* ── Page Content ── */}
       <main
         className="flex-1"
-        style={{ paddingTop: showBanner ? '108px' : '64px' }}
+        style={{ paddingTop: showBanner ? '112px' : '64px' }}
       >
         {children}
       </main>
 
-      {/* Footer */}
+      {/* ── Footer ── */}
       <Footer />
 
-      {/* Back to Top */}
+      {/* ── Back to Top ── */}
       {showButton && (
         <button
           onClick={scrollToTop}
